@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
-use nom::character::complete::{line_ending, one_of};
-use nom::combinator::{map, recognize, value};
+use nom::character::complete::{anychar, line_ending, one_of};
+use nom::combinator::{map, peek, recognize, value};
 use nom::multi::{many_till, separated_list1};
 use nom::sequence::{pair, preceded, terminated};
 use nom::IResult;
@@ -51,12 +51,19 @@ fn parse_tag(input: &str) -> IResult<&str, &str> {
     terminated(parse_tag_key, tag("  - "))(input)
 }
 
+fn parse_to_next_tag(input: &str) -> IResult<&str, &str> {
+    terminated(
+        recognize(many_till(anychar, peek(pair(line_ending, parse_tag)))),
+        line_ending,
+    )(input)
+}
+
 fn parse_rest_of_line(input: &str) -> IResult<&str, &str> {
     terminated(is_not("\r\n"), line_ending)(input)
 }
 
 fn parse_field(input: &str) -> IResult<&str, Field> {
-    map(pair(parse_tag, parse_rest_of_line), |(t, c)| Field {
+    map(pair(parse_tag, parse_to_next_tag), |(t, c)| Field {
         tag: t.to_string(),
         content: c.to_string(),
     })(input)
@@ -224,5 +231,32 @@ ER  - ";
             tag: "UR".to_string(),
             content: "http://example_url.com".to_string()
         }));
+    }
+
+    #[test]
+    fn test_multiline_field() {
+        let ref_string = "TY  - JOUR
+AU  - Shannon,Claude E.
+PY  - 1948/07//
+TI  - A Mathematical Theory of Communication
+JF  - Bell System Technical Journal
+SP  - 379
+EP  - 423
+N2  - first line,  
+        then second line and at the end 
+        the last line
+N1  - first line
+        * second line
+        * last line
+VL  - 27
+ER  - ";
+        let (_, reference) = parse_reference(ref_string).unwrap();
+        assert_eq!(reference.fields.len(), 9);
+        assert!(reference.fields.contains(&Field{tag: "N2".to_string(), content: "first line,  
+        then second line and at the end 
+        the last line".to_string()}));
+        assert!(reference.fields.contains(&Field{tag: "N1".to_string(), content: "first line
+        * second line
+        * last line".to_string()}));
     }
 }
