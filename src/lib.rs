@@ -21,7 +21,7 @@ pub struct Reference {
 fn parse_reference(input: &str) -> IResult<&str, Reference> {
     let (remainder, (ref_type, (fields, _))) = pair(
         parse_reference_type,
-        many_till(parse_string_field, parse_end_of_reference),
+        many_till(parse_field, parse_end_of_reference),
     )(input)?;
     Ok((
         remainder,
@@ -55,7 +55,7 @@ fn parse_rest_of_line(input: &str) -> IResult<&str, &str> {
     terminated(is_not("\r\n"), line_ending)(input)
 }
 
-fn parse_string_field(input: &str) -> IResult<&str, Field> {
+fn parse_field(input: &str) -> IResult<&str, Field> {
     map(pair(parse_tag, parse_rest_of_line), |(t, c)| Field {
         tag: t.to_string(),
         content: c.to_string(),
