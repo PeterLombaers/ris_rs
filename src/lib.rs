@@ -7,21 +7,9 @@ use nom::sequence::{pair, preceded, terminated};
 use nom::IResult;
 
 #[derive(Debug, PartialEq)]
-enum Content {
-    String(String),
-    List(Vec<String>),
-}
-
-#[derive(Debug, PartialEq)]
 pub struct Field {
     tag: String,
-    content: Content,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Tag {
-    key: String,
-    name: String,
+    content: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,7 +58,7 @@ fn parse_rest_of_line(input: &str) -> IResult<&str, &str> {
 fn parse_string_field(input: &str) -> IResult<&str, Field> {
     map(pair(parse_tag, parse_rest_of_line), |(t, c)| Field {
         tag: t.to_string(),
-        content: Content::String(c.to_string()),
+        content: c.to_string(),
     })(input)
 }
 
@@ -125,33 +113,31 @@ ER  - ";
                 fields: vec![
                     Field {
                         tag: "AU".to_string(),
-                        content: Content::String("Shannon,Claude E.".to_string())
+                        content: "Shannon,Claude E.".to_string()
                     },
                     Field {
                         tag: "PY".to_string(),
-                        content: Content::String("1948/07//".to_string())
+                        content: "1948/07//".to_string()
                     },
                     Field {
                         tag: "TI".to_string(),
-                        content: Content::String(
-                            "A Mathematical Theory of Communication".to_string()
-                        )
+                        content: "A Mathematical Theory of Communication".to_string()
                     },
                     Field {
                         tag: "JF".to_string(),
-                        content: Content::String("Bell System Technical Journal".to_string())
+                        content: "Bell System Technical Journal".to_string()
                     },
                     Field {
                         tag: "SP".to_string(),
-                        content: Content::String("379".to_string())
+                        content: "379".to_string()
                     },
                     Field {
                         tag: "EP".to_string(),
-                        content: Content::String("423".to_string())
+                        content: "423".to_string()
                     },
                     Field {
                         tag: "VL".to_string(),
-                        content: Content::String("27".to_string())
+                        content: "27".to_string()
                     },
                 ]
             }
@@ -214,29 +200,29 @@ ER  - ";
         assert_eq!(references[0].ref_type, "JOUR".to_string());
         assert!(references[0].fields.contains(&Field {
             tag: "ID".to_string(),
-            content: Content::String("12345".to_string())
+            content: "12345".to_string()
         }));
         assert!(references[0].fields.contains(&Field {
             tag: "CY".to_string(),
-            content: Content::String("United States".to_string())
+            content: "United States".to_string()
         }));
         assert!(references[0].fields.contains(&Field {
             tag: "Y1".to_string(),
-            content: Content::String("2014//".to_string())
+            content: "2014//".to_string()
         }));
 
         assert_eq!(references[1].ref_type, "JOUR".to_string());
         assert!(references[1].fields.contains(&Field {
             tag: "T1".to_string(),
-            content: Content::String("The title of the reference".to_string())
+            content: "The title of the reference".to_string()
         }));
         assert!(references[1].fields.contains(&Field {
             tag: "SN".to_string(),
-            content: Content::String("1732-4208".to_string())
+            content: "1732-4208".to_string()
         }));
         assert!(references[1].fields.contains(&Field {
             tag: "UR".to_string(),
-            content: Content::String("http://example_url.com".to_string())
+            content: "http://example_url.com".to_string()
         }));
     }
 }
