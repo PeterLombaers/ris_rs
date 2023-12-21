@@ -84,15 +84,20 @@ ER  - ";
     c.bench_function("reference", |b| b.iter(|| parse_ris(&reference_string)));
 }
 
-pub fn appenzeller_herzog() {
-    let file_path = "benches/files/Appenzeller-Herzog_2019.ris";
+pub fn parse_file(file_path: &str) {
     let contents = fs::read_to_string(file_path).unwrap();
     parse_ris(&contents).unwrap();
 }
 
-pub fn bench_appenzeller_herzog(c: &mut Criterion) {
-    c.bench_function("appenzeller_herzog", |b| b.iter(appenzeller_herzog));
+pub fn appenzeller_herzog(c: &mut Criterion) {
+    let file_path = "benches/files/Appenzeller-Herzog_2019.ris";
+    c.bench_function("appenzeller_herzog", |b| b.iter(|| parse_file(&file_path)));
 }
 
-criterion_group!(benches, reference, reference_2, bench_appenzeller_herzog);
+pub fn kwok(c: &mut Criterion) {
+    let file_path = "benches/files/Kwok_2020.ris";
+    c.bench_function("kwok", |b| b.iter(|| parse_file(&file_path)));
+}
+
+criterion_group!(benches, reference, reference_2, appenzeller_herzog, kwok);
 criterion_main!(benches);
