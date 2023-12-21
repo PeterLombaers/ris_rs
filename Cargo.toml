@@ -7,3 +7,10 @@ edition = "2021"
 
 [dependencies]
 nom = "7.1.3"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "parser"
+harness = false
