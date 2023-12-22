@@ -27,7 +27,7 @@ L2  - http://example.com
 UR  - http://example_url.com
 ER  - ";
     c.bench_function("reference", |b| {
-        b.iter(|| parse_reference(&reference_string))
+        b.iter(|| parse_ris(&reference_string))
     });
 }
 
