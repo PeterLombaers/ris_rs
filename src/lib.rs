@@ -7,15 +7,15 @@ use nom::sequence::{pair, preceded, terminated};
 use nom::IResult;
 
 #[derive(Debug, PartialEq)]
-pub struct Field {
-    tag: String,
-    content: String,
+pub struct Field<'a> {
+    tag: &'a str,
+    content: &'a str,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Reference {
-    ref_type: String,
-    fields: Vec<Field>,
+pub struct Reference<'a> {
+    ref_type: &'a str,
+    fields: Vec<Field<'a>>,
 }
 
 fn parse_reference(input: &str) -> IResult<&str, Reference> {
@@ -26,7 +26,7 @@ fn parse_reference(input: &str) -> IResult<&str, Reference> {
     Ok((
         remainder,
         Reference {
-            ref_type: ref_type.to_string(),
+            ref_type,
             fields,
         },
     ))
@@ -63,9 +63,9 @@ fn parse_rest_of_line(input: &str) -> IResult<&str, &str> {
 }
 
 fn parse_field(input: &str) -> IResult<&str, Field> {
-    map(pair(parse_tag, parse_to_next_tag), |(t, c)| Field {
-        tag: t.to_string(),
-        content: c.to_string(),
+    map(pair(parse_tag, parse_to_next_tag), |(tag, content)| Field {
+        tag,
+        content,
     })(input)
 }
 
@@ -81,7 +81,7 @@ fn parse_to_next_reference(input: &str) -> IResult<&str, &str> {
     take_until("TY  - ")(input)
 }
 
-fn parse_ris(input: &str) -> IResult<&str, Vec<Reference>> {
+pub fn parse_ris(input: &str) -> IResult<&str, Vec<Reference>> {
     preceded(
         parse_to_next_reference,
         separated_list1(parse_to_next_reference, parse_reference),
@@ -116,35 +116,35 @@ ER  - ";
         assert_eq!(
             reference,
             Reference {
-                ref_type: "JOUR".to_string(),
+                ref_type: "JOUR",
                 fields: vec![
                     Field {
-                        tag: "AU".to_string(),
-                        content: "Shannon,Claude E.".to_string()
+                        tag: "AU",
+                        content: "Shannon,Claude E."
                     },
                     Field {
-                        tag: "PY".to_string(),
-                        content: "1948/07//".to_string()
+                        tag: "PY",
+                        content: "1948/07//"
                     },
                     Field {
-                        tag: "TI".to_string(),
-                        content: "A Mathematical Theory of Communication".to_string()
+                        tag: "TI",
+                        content: "A Mathematical Theory of Communication"
                     },
                     Field {
-                        tag: "JF".to_string(),
-                        content: "Bell System Technical Journal".to_string()
+                        tag: "JF",
+                        content: "Bell System Technical Journal"
                     },
                     Field {
-                        tag: "SP".to_string(),
-                        content: "379".to_string()
+                        tag: "SP",
+                        content: "379"
                     },
                     Field {
-                        tag: "EP".to_string(),
-                        content: "423".to_string()
+                        tag: "EP",
+                        content: "423"
                     },
                     Field {
-                        tag: "VL".to_string(),
-                        content: "27".to_string()
+                        tag: "VL",
+                        content: "27"
                     },
                 ]
             }
@@ -206,30 +206,30 @@ ER  - ";
         assert_eq!(references.len(), 2);
         assert_eq!(references[0].ref_type, "JOUR".to_string());
         assert!(references[0].fields.contains(&Field {
-            tag: "ID".to_string(),
-            content: "12345".to_string()
+            tag: "ID",
+            content: "12345"
         }));
         assert!(references[0].fields.contains(&Field {
-            tag: "CY".to_string(),
-            content: "United States".to_string()
+            tag: "CY",
+            content: "United States"
         }));
         assert!(references[0].fields.contains(&Field {
-            tag: "Y1".to_string(),
-            content: "2014//".to_string()
+            tag: "Y1",
+            content: "2014//"
         }));
 
         assert_eq!(references[1].ref_type, "JOUR".to_string());
         assert!(references[1].fields.contains(&Field {
-            tag: "T1".to_string(),
-            content: "The title of the reference".to_string()
+            tag: "T1",
+            content: "The title of the reference"
         }));
         assert!(references[1].fields.contains(&Field {
-            tag: "SN".to_string(),
-            content: "1732-4208".to_string()
+            tag: "SN",
+            content: "1732-4208"
         }));
         assert!(references[1].fields.contains(&Field {
-            tag: "UR".to_string(),
-            content: "http://example_url.com".to_string()
+            tag: "UR",
+            content: "http://example_url.com"
         }));
     }
 
@@ -252,11 +252,11 @@ VL  - 27
 ER  - ";
         let (_, reference) = parse_reference(ref_string).unwrap();
         assert_eq!(reference.fields.len(), 9);
-        assert!(reference.fields.contains(&Field{tag: "N2".to_string(), content: "first line,  
+        assert!(reference.fields.contains(&Field{tag: "N2", content: "first line,  
         then second line and at the end 
-        the last line".to_string()}));
-        assert!(reference.fields.contains(&Field{tag: "N1".to_string(), content: "first line
+        the last line"}));
+        assert!(reference.fields.contains(&Field{tag: "N1", content: "first line
         * second line
-        * last line".to_string()}));
+        * last line"}));
     }
 }
