@@ -1,6 +1,6 @@
 use crate::tag::Tag;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Field<'a> {
     tag: Tag,
     content: &'a str,

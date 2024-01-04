@@ -1,6 +1,6 @@
 use crate::Field;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Reference<'a> {
     ref_type: &'a str,
     fields: Vec<Field<'a>>,
