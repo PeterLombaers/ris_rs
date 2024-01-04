@@ -1,3 +1,5 @@
+use std::fmt;
+
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 use nom::character::complete::{anychar, line_ending};
@@ -6,18 +8,17 @@ use nom::multi::{many_till, separated_list1};
 use nom::sequence::{pair, preceded, terminated};
 use nom::IResult;
 
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tag {
     TY,
-    A1,  // ListType
-    A2,  // ListType
-    A3,  // ListType
-    A4,  // ListType
+    A1, // ListType
+    A2, // ListType
+    A3, // ListType
+    A4, // ListType
     AB,
     AD,
     AN,
-    AU,  // ListType
+    AU, // ListType
     C1,
     C2,
     C3,
@@ -41,7 +42,7 @@ pub enum Tag {
     JA,
     JF,
     JO,
-    KW,  // ListType
+    KW, // ListType
     L1,
     L2,
     L4,
@@ -49,7 +50,7 @@ pub enum Tag {
     LB,
     M1,
     M3,
-    N1,  // ListType
+    N1, // ListType
     N2,
     NV,
     OP,
@@ -68,12 +69,88 @@ pub enum Tag {
     TA,
     TI,
     TT,
-    UR,  // ListType
+    UR, // ListType
     VL,
     Y1,
     Y2,
     ER,
     UK,
+}
+
+impl fmt::Display for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Tag::TY => "type_of_reference",
+                Tag::A1 => "first_authors",
+                Tag::A2 => "secondary_authors",
+                Tag::A3 => "tertiary_authors",
+                Tag::A4 => "subsidiary_authors",
+                Tag::AB => "abstract",
+                Tag::AD => "author_address",
+                Tag::AN => "accession_number",
+                Tag::AU => "authors",
+                Tag::C1 => "custom1",
+                Tag::C2 => "custom2",
+                Tag::C3 => "custom3",
+                Tag::C4 => "custom4",
+                Tag::C5 => "custom5",
+                Tag::C6 => "custom6",
+                Tag::C7 => "custom7",
+                Tag::C8 => "custom8",
+                Tag::CA => "caption",
+                Tag::CN => "call_number",
+                Tag::CY => "place_published",
+                Tag::DA => "date",
+                Tag::DB => "name_of_database",
+                Tag::DO => "doi",
+                Tag::DP => "database_provider",
+                Tag::ET => "edition",
+                Tag::EP => "end_page",
+                Tag::ID => "id",
+                Tag::IS => "number",
+                Tag::J2 => "alternate_title1",
+                Tag::JA => "alternate_title2",
+                Tag::JF => "alternate_title3",
+                Tag::JO => "journal_name",
+                Tag::KW => "keywords",
+                Tag::L1 => "file_attachments1",
+                Tag::L2 => "file_attachments2",
+                Tag::L4 => "figure",
+                Tag::LA => "language",
+                Tag::LB => "label",
+                Tag::M1 => "note",
+                Tag::M3 => "type_of_work",
+                Tag::N1 => "notes",
+                Tag::N2 => "notes_abstract",
+                Tag::NV => "number_of_volumes",
+                Tag::OP => "original_publication",
+                Tag::PB => "publisher",
+                Tag::PY => "year",
+                Tag::RI => "reviewed_item",
+                Tag::RN => "research_notes",
+                Tag::RP => "reprint_edition",
+                Tag::SE => "section",
+                Tag::SN => "issn",
+                Tag::SP => "start_page",
+                Tag::ST => "short_title",
+                Tag::T1 => "primary_title",
+                Tag::T2 => "secondary_title",
+                Tag::T3 => "tertiary_title",
+                Tag::TA => "translated_author",
+                Tag::TI => "title",
+                Tag::TT => "translated_title",
+                Tag::UR => "urls",
+                Tag::VL => "volume",
+                Tag::Y1 => "publication_year",
+                Tag::Y2 => "access_date",
+                Tag::ER => "end_of_reference",
+                Tag::UK => "unknown_tag",
+            }
+        )
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -93,88 +170,82 @@ fn parse_reference(input: &str) -> IResult<&str, Reference> {
         parse_reference_type,
         many_till(parse_field, parse_end_of_reference),
     )(input)?;
-    Ok((
-        remainder,
-        Reference {
-            ref_type,
-            fields,
-        },
-    ))
+    Ok((remainder, Reference { ref_type, fields }))
 }
 
 fn parse_tag_key(input: &str) -> IResult<&str, Tag> {
     alt((
-        value(Tag::TY,tag("TY")),
-        value(Tag::A1,tag("A1")),
-        value(Tag::A2,tag("A2")),
-        value(Tag::A3,tag("A3")),
-        value(Tag::A4,tag("A4")),
-        value(Tag::AB,tag("AB")),
-        value(Tag::AD,tag("AD")),
-        value(Tag::AN,tag("AN")),
-        value(Tag::AU,tag("AU")),
-        value(Tag::C1,tag("C1")),
-        value(Tag::C2,tag("C2")),
-        value(Tag::C3,tag("C3")),
-        value(Tag::C4,tag("C4")),
-        value(Tag::C5,tag("C5")),
-        value(Tag::C6,tag("C6")),
-        value(Tag::C7,tag("C7")),
-        value(Tag::C8,tag("C8")),
-        value(Tag::CA,tag("CA")),
-        value(Tag::CN,tag("CN")),
-        value(Tag::CY,tag("CY")),
+        value(Tag::TY, tag("TY")),
+        value(Tag::A1, tag("A1")),
+        value(Tag::A2, tag("A2")),
+        value(Tag::A3, tag("A3")),
+        value(Tag::A4, tag("A4")),
+        value(Tag::AB, tag("AB")),
+        value(Tag::AD, tag("AD")),
+        value(Tag::AN, tag("AN")),
+        value(Tag::AU, tag("AU")),
+        value(Tag::C1, tag("C1")),
+        value(Tag::C2, tag("C2")),
+        value(Tag::C3, tag("C3")),
+        value(Tag::C4, tag("C4")),
+        value(Tag::C5, tag("C5")),
+        value(Tag::C6, tag("C6")),
+        value(Tag::C7, tag("C7")),
+        value(Tag::C8, tag("C8")),
+        value(Tag::CA, tag("CA")),
+        value(Tag::CN, tag("CN")),
+        value(Tag::CY, tag("CY")),
         alt((
-            value(Tag::DA,tag("DA")),
-            value(Tag::DB,tag("DB")),
-            value(Tag::DO,tag("DO")),
-            value(Tag::DP,tag("DP")),
-            value(Tag::ET,tag("ET")),
-            value(Tag::EP,tag("EP")),
-            value(Tag::ID,tag("ID")),
-            value(Tag::IS,tag("IS")),
-            value(Tag::J2,tag("J2")),
-            value(Tag::JA,tag("JA")),
-            value(Tag::JF,tag("JF")),
-            value(Tag::JO,tag("JO")),
-            value(Tag::KW,tag("KW")),
-            value(Tag::L1,tag("L1")),
-            value(Tag::L2,tag("L2")),
-            value(Tag::L4,tag("L4")),
-            value(Tag::LA,tag("LA")),
-            value(Tag::LB,tag("LB")),
-            value(Tag::M1,tag("M1")),
-            value(Tag::M3,tag("M3")),
+            value(Tag::DA, tag("DA")),
+            value(Tag::DB, tag("DB")),
+            value(Tag::DO, tag("DO")),
+            value(Tag::DP, tag("DP")),
+            value(Tag::ET, tag("ET")),
+            value(Tag::EP, tag("EP")),
+            value(Tag::ID, tag("ID")),
+            value(Tag::IS, tag("IS")),
+            value(Tag::J2, tag("J2")),
+            value(Tag::JA, tag("JA")),
+            value(Tag::JF, tag("JF")),
+            value(Tag::JO, tag("JO")),
+            value(Tag::KW, tag("KW")),
+            value(Tag::L1, tag("L1")),
+            value(Tag::L2, tag("L2")),
+            value(Tag::L4, tag("L4")),
+            value(Tag::LA, tag("LA")),
+            value(Tag::LB, tag("LB")),
+            value(Tag::M1, tag("M1")),
+            value(Tag::M3, tag("M3")),
             alt((
-                value(Tag::N1,tag("N1")),
-                value(Tag::N2,tag("N2")),
-                value(Tag::NV,tag("NV")),
-                value(Tag::OP,tag("OP")),
-                value(Tag::PB,tag("PB")),
-                value(Tag::PY,tag("PY")),
-                value(Tag::RI,tag("RI")),
-                value(Tag::RN,tag("RN")),
-                value(Tag::RP,tag("RP")),
-                value(Tag::SE,tag("SE")),
-                value(Tag::SN,tag("SN")),
-                value(Tag::SP,tag("SP")),
-                value(Tag::ST,tag("ST")),
-                value(Tag::T1,tag("T1")),
-                value(Tag::T2,tag("T2")),
-                value(Tag::T3,tag("T3")),
-                value(Tag::TA,tag("TA")),
-                value(Tag::TI,tag("TI")),
-                value(Tag::TT,tag("TT")),
+                value(Tag::N1, tag("N1")),
+                value(Tag::N2, tag("N2")),
+                value(Tag::NV, tag("NV")),
+                value(Tag::OP, tag("OP")),
+                value(Tag::PB, tag("PB")),
+                value(Tag::PY, tag("PY")),
+                value(Tag::RI, tag("RI")),
+                value(Tag::RN, tag("RN")),
+                value(Tag::RP, tag("RP")),
+                value(Tag::SE, tag("SE")),
+                value(Tag::SN, tag("SN")),
+                value(Tag::SP, tag("SP")),
+                value(Tag::ST, tag("ST")),
+                value(Tag::T1, tag("T1")),
+                value(Tag::T2, tag("T2")),
+                value(Tag::T3, tag("T3")),
+                value(Tag::TA, tag("TA")),
+                value(Tag::TI, tag("TI")),
+                value(Tag::TT, tag("TT")),
                 alt((
-                    value(Tag::UR,tag("UR")),
-                    value(Tag::VL,tag("VL")),
-                    value(Tag::Y1,tag("Y1")),
-                    value(Tag::Y2,tag("Y2")),
-                    value(Tag::ER,tag("ER")),
-                    value(Tag::UK,tag("UK")),
-                ))
-            ))
-        ))
+                    value(Tag::UR, tag("UR")),
+                    value(Tag::VL, tag("VL")),
+                    value(Tag::Y1, tag("Y1")),
+                    value(Tag::Y2, tag("Y2")),
+                    value(Tag::ER, tag("ER")),
+                    value(Tag::UK, tag("UK")),
+                )),
+            )),
+        )),
     ))(input)
 }
 
@@ -381,11 +452,17 @@ VL  - 27
 ER  - ";
         let (_, reference) = parse_reference(ref_string).unwrap();
         assert_eq!(reference.fields.len(), 9);
-        assert!(reference.fields.contains(&Field{tag: Tag::N2, content: "first line,  
+        assert!(reference.fields.contains(&Field {
+            tag: Tag::N2,
+            content: "first line,  
         then second line and at the end 
-        the last line"}));
-        assert!(reference.fields.contains(&Field{tag: Tag::N1, content: "first line
+        the last line"
+        }));
+        assert!(reference.fields.contains(&Field {
+            tag: Tag::N1,
+            content: "first line
         * second line
-        * last line"}));
+        * last line"
+        }));
     }
 }
