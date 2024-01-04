@@ -1,5 +1,3 @@
-use std::fmt;
-
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 use nom::character::complete::{anychar, line_ending};
@@ -8,169 +6,16 @@ use nom::multi::{many_till, separated_list1};
 use nom::sequence::{pair, preceded, terminated};
 use nom::IResult;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Tag {
-    TY,
-    A1, // ListType
-    A2, // ListType
-    A3, // ListType
-    A4, // ListType
-    AB,
-    AD,
-    AN,
-    AU, // ListType
-    C1,
-    C2,
-    C3,
-    C4,
-    C5,
-    C6,
-    C7,
-    C8,
-    CA,
-    CN,
-    CY,
-    DA,
-    DB,
-    DO,
-    DP,
-    ET,
-    EP,
-    ID,
-    IS,
-    J2,
-    JA,
-    JF,
-    JO,
-    KW, // ListType
-    L1,
-    L2,
-    L4,
-    LA,
-    LB,
-    M1,
-    M3,
-    N1, // ListType
-    N2,
-    NV,
-    OP,
-    PB,
-    PY,
-    RI,
-    RN,
-    RP,
-    SE,
-    SN,
-    SP,
-    ST,
-    T1,
-    T2,
-    T3,
-    TA,
-    TI,
-    TT,
-    UR, // ListType
-    VL,
-    Y1,
-    Y2,
-    ER,
-    UK,
-}
-
-impl fmt::Display for Tag {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Tag::TY => "type_of_reference",
-                Tag::A1 => "first_authors",
-                Tag::A2 => "secondary_authors",
-                Tag::A3 => "tertiary_authors",
-                Tag::A4 => "subsidiary_authors",
-                Tag::AB => "abstract",
-                Tag::AD => "author_address",
-                Tag::AN => "accession_number",
-                Tag::AU => "authors",
-                Tag::C1 => "custom1",
-                Tag::C2 => "custom2",
-                Tag::C3 => "custom3",
-                Tag::C4 => "custom4",
-                Tag::C5 => "custom5",
-                Tag::C6 => "custom6",
-                Tag::C7 => "custom7",
-                Tag::C8 => "custom8",
-                Tag::CA => "caption",
-                Tag::CN => "call_number",
-                Tag::CY => "place_published",
-                Tag::DA => "date",
-                Tag::DB => "name_of_database",
-                Tag::DO => "doi",
-                Tag::DP => "database_provider",
-                Tag::ET => "edition",
-                Tag::EP => "end_page",
-                Tag::ID => "id",
-                Tag::IS => "number",
-                Tag::J2 => "alternate_title1",
-                Tag::JA => "alternate_title2",
-                Tag::JF => "alternate_title3",
-                Tag::JO => "journal_name",
-                Tag::KW => "keywords",
-                Tag::L1 => "file_attachments1",
-                Tag::L2 => "file_attachments2",
-                Tag::L4 => "figure",
-                Tag::LA => "language",
-                Tag::LB => "label",
-                Tag::M1 => "note",
-                Tag::M3 => "type_of_work",
-                Tag::N1 => "notes",
-                Tag::N2 => "notes_abstract",
-                Tag::NV => "number_of_volumes",
-                Tag::OP => "original_publication",
-                Tag::PB => "publisher",
-                Tag::PY => "year",
-                Tag::RI => "reviewed_item",
-                Tag::RN => "research_notes",
-                Tag::RP => "reprint_edition",
-                Tag::SE => "section",
-                Tag::SN => "issn",
-                Tag::SP => "start_page",
-                Tag::ST => "short_title",
-                Tag::T1 => "primary_title",
-                Tag::T2 => "secondary_title",
-                Tag::T3 => "tertiary_title",
-                Tag::TA => "translated_author",
-                Tag::TI => "title",
-                Tag::TT => "translated_title",
-                Tag::UR => "urls",
-                Tag::VL => "volume",
-                Tag::Y1 => "publication_year",
-                Tag::Y2 => "access_date",
-                Tag::ER => "end_of_reference",
-                Tag::UK => "unknown_tag",
-            }
-        )
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Field<'a> {
-    tag: Tag,
-    content: &'a str,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Reference<'a> {
-    ref_type: &'a str,
-    fields: Vec<Field<'a>>,
-}
+use crate::Field;
+use crate::Reference;
+use crate::Tag;
 
 fn parse_reference(input: &str) -> IResult<&str, Reference> {
     let (remainder, (ref_type, (fields, _))) = pair(
         parse_reference_type,
         many_till(parse_field, parse_end_of_reference),
     )(input)?;
-    Ok((remainder, Reference { ref_type, fields }))
+    Ok((remainder, Reference::new(ref_type, fields)))
 }
 
 fn parse_tag_key(input: &str) -> IResult<&str, Tag> {
@@ -265,9 +110,8 @@ fn parse_rest_of_line(input: &str) -> IResult<&str, &str> {
 }
 
 fn parse_field(input: &str) -> IResult<&str, Field> {
-    map(pair(parse_tag, parse_to_next_tag), |(tag, content)| Field {
-        tag,
-        content,
+    map(pair(parse_tag, parse_to_next_tag), |(tag, content)| {
+        Field::new(tag, content)
     })(input)
 }
 
@@ -315,39 +159,18 @@ ER  - ";
         assert_eq!(remainder, "");
         assert_eq!(
             reference,
-            Reference {
-                ref_type: "JOUR",
-                fields: vec![
-                    Field {
-                        tag: Tag::AU,
-                        content: "Shannon,Claude E."
-                    },
-                    Field {
-                        tag: Tag::PY,
-                        content: "1948/07//"
-                    },
-                    Field {
-                        tag: Tag::TI,
-                        content: "A Mathematical Theory of Communication"
-                    },
-                    Field {
-                        tag: Tag::JF,
-                        content: "Bell System Technical Journal"
-                    },
-                    Field {
-                        tag: Tag::SP,
-                        content: "379"
-                    },
-                    Field {
-                        tag: Tag::EP,
-                        content: "423"
-                    },
-                    Field {
-                        tag: Tag::VL,
-                        content: "27"
-                    },
+            Reference::new(
+                "JOUR",
+                vec![
+                    Field::new(Tag::AU, "Shannon,Claude E."),
+                    Field::new(Tag::PY, "1948/07//"),
+                    Field::new(Tag::TI, "A Mathematical Theory of Communication"),
+                    Field::new(Tag::JF, "Bell System Technical Journal"),
+                    Field::new(Tag::SP, "379"),
+                    Field::new(Tag::EP, "423"),
+                    Field::new(Tag::VL, "27"),
                 ]
-            }
+            )
         )
     }
 
@@ -404,33 +227,27 @@ UR  - http://example_url.com
 ER  - ";
         let (_, references) = parse_ris(ref_string).unwrap();
         assert_eq!(references.len(), 2);
-        assert_eq!(references[0].ref_type, "JOUR".to_string());
-        assert!(references[0].fields.contains(&Field {
-            tag: Tag::ID,
-            content: "12345"
-        }));
-        assert!(references[0].fields.contains(&Field {
-            tag: Tag::CY,
-            content: "United States"
-        }));
-        assert!(references[0].fields.contains(&Field {
-            tag: Tag::Y1,
-            content: "2014//"
-        }));
+        assert_eq!(references[0].ref_type(), "JOUR".to_string());
+        assert!(references[0]
+            .fields()
+            .contains(&Field::new(Tag::ID, "12345")));
+        assert!(references[0]
+            .fields()
+            .contains(&Field::new(Tag::CY, "United States")));
+        assert!(references[0]
+            .fields()
+            .contains(&Field::new(Tag::Y1, "2014//")));
 
-        assert_eq!(references[1].ref_type, "JOUR".to_string());
-        assert!(references[1].fields.contains(&Field {
-            tag: Tag::T1,
-            content: "The title of the reference"
-        }));
-        assert!(references[1].fields.contains(&Field {
-            tag: Tag::SN,
-            content: "1732-4208"
-        }));
-        assert!(references[1].fields.contains(&Field {
-            tag: Tag::UR,
-            content: "http://example_url.com"
-        }));
+        assert_eq!(references[1].ref_type(), "JOUR".to_string());
+        assert!(references[1]
+            .fields()
+            .contains(&Field::new(Tag::T1, "The title of the reference")));
+        assert!(references[1]
+            .fields()
+            .contains(&Field::new(Tag::SN, "1732-4208")));
+        assert!(references[1]
+            .fields()
+            .contains(&Field::new(Tag::UR, "http://example_url.com")));
     }
 
     #[test]
@@ -451,18 +268,18 @@ N1  - first line
 VL  - 27
 ER  - ";
         let (_, reference) = parse_reference(ref_string).unwrap();
-        assert_eq!(reference.fields.len(), 9);
-        assert!(reference.fields.contains(&Field {
-            tag: Tag::N2,
-            content: "first line,  
+        assert_eq!(reference.fields().len(), 9);
+        assert!(reference.fields().contains(&Field::new(
+            Tag::N2,
+            "first line,  
         then second line and at the end 
         the last line"
-        }));
-        assert!(reference.fields.contains(&Field {
-            tag: Tag::N1,
-            content: "first line
+        )));
+        assert!(reference.fields().contains(&Field::new(
+            Tag::N1,
+            "first line
         * second line
         * last line"
-        }));
+        )));
     }
 }
