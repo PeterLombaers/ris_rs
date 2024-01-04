@@ -4,7 +4,7 @@ use std::fs;
 
 pub fn parse_file(file_path: &str) {
     let contents = fs::read_to_string(file_path).unwrap();
-    parse_ris(&contents).unwrap();
+    parse_ris_nom(&contents).unwrap();
 }
 
 pub fn appenzeller_herzog(c: &mut Criterion) {

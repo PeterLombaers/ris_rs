@@ -26,15 +26,15 @@ M1  - 1008150341
 L2  - http://example.com
 UR  - http://example_url.com
 ER  - ";
-    c.bench_function("reference", |b| {
-        b.iter(|| parse_ris(&reference_string))
-    });
+    c.bench_function("reference", |b| b.iter(|| parse_ris_nom(&reference_string)));
 }
 
 pub fn appenzeller_herzog(c: &mut Criterion) {
     let file_path = "benches/files/Appenzeller-Herzog_2019.ris";
     let contents = fs::read_to_string(file_path).unwrap();
-    c.bench_function("appenzeller_herzog", |b| b.iter(|| parse_ris(&contents)));
+    c.bench_function("appenzeller_herzog", |b| {
+        b.iter(|| parse_ris_nom(&contents))
+    });
 }
 
 criterion_group!(benches, reference, appenzeller_herzog);
