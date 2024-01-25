@@ -16,7 +16,9 @@ impl RisParser<'_> {
         let mut cursor = 0;
         let mut references = Vec::new();
         // Skip BOM if it's there.
-        if input.chars().next() == Some('\u{feff}') { cursor += 3}
+        if input.chars().next() == Some('\u{feff}') {
+            cursor += 3
+        }
         self.parse_to_next_tag(input, &mut cursor)?;
         while cursor < input.len() {
             references.push(self.parse_reference(input, &mut cursor)?);
@@ -31,17 +33,12 @@ impl RisParser<'_> {
 
     fn parse_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
         let mut chars_iter = input[*cursor..].chars();
-        let first_char = chars_iter
-            .next()
-            .ok_or("input should contain at least 2 more characters")?;
-        let second_char = chars_iter
-            .next()
-            .ok_or("input should contain at least 2 more characters")?;
+        let first_char = chars_iter.next().ok_or("EOF")?;
+        let second_char = chars_iter.next().ok_or("EOF")?;
         if !self.allowed_tags.contains(&(first_char, second_char)) {
             return Err("tag should be in the list of allowed tags");
         }
         let output = &input[*cursor..*cursor + 2];
-
         if !(&input[(*cursor + 2)..(*cursor + 2 + self.post_tag.len())] == self.post_tag) {
             return Err("tag should be followed by post-tag string");
         }
@@ -63,6 +60,9 @@ impl RisParser<'_> {
     // keeps the newlines in between the lines. If I return owned copies and create a new
     // string and remove the newlines while parsing.
     fn parse_to_next_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
+        if *cursor >= input.len() {
+            return Err("EOF");
+        }
         let cursor_start = cursor.clone();
         loop {
             // Pass cursor clone, so actual cursor does not advance when checking tag.
@@ -318,6 +318,28 @@ aaa";
         let mut cursor = 0;
         assert_eq!(parser.parse_reference(input, &mut cursor).unwrap(), output);
         assert_eq!(&input[cursor..], "aaa");
+    }
+
+    #[test]
+    fn test_eof() {
+        let parser = RisParser::default();
+        let input = "TY  - JOUR
+A1  - author
+ER  - ";
+        assert!(parser.parse(&input).is_ok());
+
+        let input = "TY  - JOUR
+A1  - author
+ER  - 
+";
+        assert!(parser.parse(&input).is_ok());
+
+        let input = "TY  - JOUR
+A1  - author
+ER  - 
+foo
+bar   ";
+        assert!(parser.parse(&input).is_ok());
     }
 
     #[test]
