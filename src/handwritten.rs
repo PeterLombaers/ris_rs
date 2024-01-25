@@ -16,8 +16,7 @@ impl RisParser<'_> {
         let mut cursor = 0;
         let mut references = Vec::new();
         self.parse_to_next_tag(input, &mut cursor)?;
-        while cursor < input.len() {
-            dbg!(&cursor);
+                while cursor < input.len() {
             references.push(self.parse_reference(input, &mut cursor)?);
             match self.parse_to_next_tag(input, &mut cursor) {
                 Ok(_) => continue,
@@ -63,16 +62,23 @@ impl RisParser<'_> {
     // string and remove the newlines while parsing.
     fn parse_to_next_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
         let cursor_start = cursor.clone();
-        while self.parse_tag(input, cursor).is_err() {
-            self.parse_line(input, cursor)?;
+        loop {
+            // Pass cursor clone, so actual cursor does not advance when checking tag.
+            match self.parse_tag(input, &mut cursor.clone()) {
+                Err("EOF") => return Err("EOF"),
+                Err(_) => self.parse_line(input, cursor)?,
+                Ok(_) => break,
+            };
             if *cursor >= input.len() {
                 return Err("EOF");
             }
         }
-        // Move back cursor since it succesfully parsed a tag.
-        *cursor -= 2 + self.post_tag.len();
-        // Remove the last newline from the output.
-        Ok(&input[cursor_start..*cursor - 1])
+        // Remove the last newline from the output if anything was parsed.
+        if *cursor > cursor_start {
+            Ok(&input[cursor_start..*cursor - 1])
+        } else {
+            Ok("")
+        }
     }
 
     fn parse_reference<'a>(
@@ -200,7 +206,23 @@ mod tests {
         let input = "aa\nb";
         let mut cursor = 0;
         assert_eq!(parser.parse_line(&input, &mut cursor).unwrap(), "aa");
-        assert_eq!(cursor, 3)
+        assert_eq!(cursor, 3);
+
+        let input = "";
+        let mut cursor = 0;
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
+
+        let input = "foobar";
+        let mut cursor = 0;
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
+
+        let input = "\n\n";
+        let mut cursor = 0;
+        assert_eq!(parser.parse_line(&input, &mut cursor), Ok(""));
+        assert_eq!(cursor, 1);
+        assert_eq!(parser.parse_line(&input, &mut cursor), Ok(""));
+        assert_eq!(cursor, 2);
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
     }
 
     #[test]
@@ -235,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_content() {
+    fn test_parse_to_next_tag() {
         let start_tag = "TY";
         let end_tag = "ER";
         let post_tag = "  - ";
@@ -246,6 +268,15 @@ mod tests {
             allowed_tags,
             post_tag,
         };
+        let input = "AB  - ";
+        let mut cursor = 0;
+        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), "");
+        assert_eq!(cursor, 0);
+
+        let input = "\nAB  - ";
+        let mut cursor = 0;
+        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), "");
+        assert_eq!(cursor, 1);
 
         let input = "aa\nAB  - b";
         let mut cursor = 0;
