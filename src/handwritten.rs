@@ -15,8 +15,10 @@ impl RisParser<'_> {
     pub fn parse<'a>(&self, input: &'a str) -> PResult<Vec<HashMap<&'a str, &'a str>>> {
         let mut cursor = 0;
         let mut references = Vec::new();
+        // Skip BOM if it's there.
+        if input.chars().next() == Some('\u{feff}') { cursor += 3}
         self.parse_to_next_tag(input, &mut cursor)?;
-                while cursor < input.len() {
+        while cursor < input.len() {
             references.push(self.parse_reference(input, &mut cursor)?);
             match self.parse_to_next_tag(input, &mut cursor) {
                 Ok(_) => continue,
