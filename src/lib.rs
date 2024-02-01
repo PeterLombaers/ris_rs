@@ -3,6 +3,7 @@ mod nom_parser;
 mod reference;
 mod tag;
 mod parser;
+mod python_bindings;
 
 pub use field::Field;
 pub use parser::RisParser;
