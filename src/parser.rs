@@ -88,7 +88,7 @@ impl RisParser<'_> {
         input: &'a str,
         cursor: &mut usize,
     ) -> PResult<HashMap<&'a str, &'a str>> {
-        let mut reference: HashMap<&str, &str> = HashMap::new();
+        let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
         let start_tag = self.parse_tag(input, cursor)?;
         if start_tag != self.start_tag {
             return Err("reference should start with the start tag");
@@ -107,6 +107,7 @@ impl RisParser<'_> {
         }
         // Since we didn't parse content after the end_tag we need to advance past the newline
         *cursor += 1;
+        reference.shrink_to_fit();
         Ok(reference)
     }
 }
