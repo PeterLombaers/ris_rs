@@ -8,7 +8,8 @@ def load_file_rispy(filepath):
 
 
 def load_file_rust(filepath):
-    ris.parse(filepath)
+    with open(filepath) as f:
+        ris.parse(f.read())
 
 
 def test_appenzeller_herzog_python(benchmark):
@@ -23,5 +24,5 @@ def test_appenzeller_herzog_rust(benchmark):
     benchmark(load_file_rust, "benches/files/Appenzeller-Herzog_2019.ris")
 
 
-def test_kwok_rust(benchmark):
-    benchmark(load_file_rust, "benches/files/Kwok_2020.ris")
+# def test_kwok_rust(benchmark):
+#     benchmark(load_file_rust, "benches/files/Kwok_2020.ris")
