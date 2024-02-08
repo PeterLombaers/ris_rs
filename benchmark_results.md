@@ -18,3 +18,9 @@
 - This depends on the capacity we give the hashmap. If it's too much, there will be unnecessary memory allocated, if it's too little there will be extra allocations. There seems to be a perfect middle ground.
 
 It seems useful to make sure the hashmap has sufficient capacity but is then shrunk back to actual size. Some trial and error leads to 20 being the right capacity, at least for the Appenzeller-Herzog file.
+
+
+## Python Bindings
+| Date | Change | Python | Rust |
+|------|--------|--------|------|
+| 2024-02-08 | Initial Bindings (String Input) | 74.5673 | 463.6952 |
