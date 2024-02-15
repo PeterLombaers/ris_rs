@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
+use crate::Error;
 
-type Error = &'static str;
 type PResult<T> = Result<T, Error>;
 
 // If I use a visitor, I can check the allowed tags in the visitor.
@@ -24,7 +24,7 @@ impl RisParser<'_> {
             references.push(self.parse_reference(input, &mut cursor)?);
             match self.parse_to_next_tag(input, &mut cursor) {
                 Ok(_) => continue,
-                Err("EOF") => break,
+                Err(Error::EOF) => break,
                 Err(e) => return Err(e),
             };
         }
@@ -33,14 +33,14 @@ impl RisParser<'_> {
 
     fn parse_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
         let mut chars_iter = input[*cursor..].chars();
-        let first_char = chars_iter.next().ok_or("EOF")?;
-        let second_char = chars_iter.next().ok_or("EOF")?;
+        let first_char = chars_iter.next().ok_or(Error::EOF)?;
+        let second_char = chars_iter.next().ok_or(Error::EOF)?;
         if !self.allowed_tags.contains(&(first_char, second_char)) {
-            return Err("tag should be in the list of allowed tags");
+            return Err(Error::UnknownTag);
         }
         let output = &input[*cursor..*cursor + 2];
         if !(&input[(*cursor + 2)..(*cursor + 2 + self.post_tag.len())] == self.post_tag) {
-            return Err("tag should be followed by post-tag string");
+            return Err(Error::ParserError("tag should be followed by post-tag string".to_owned()));
         }
         *cursor += 2 + self.post_tag.len();
         Ok(output)
@@ -48,7 +48,7 @@ impl RisParser<'_> {
 
     fn parse_line<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
         let mut char_iter = input[*cursor..].chars().enumerate();
-        let (idx, _) = char_iter.find(|(_, c)| *c == '\n').ok_or("EOF")?;
+        let (idx, _) = char_iter.find(|(_, c)| *c == '\n').ok_or(Error::EOF)?;
         let output = &input[*cursor..(*cursor + idx)];
         *cursor += idx + 1;
         Ok(output)
@@ -61,18 +61,18 @@ impl RisParser<'_> {
     // string and remove the newlines while parsing.
     fn parse_to_next_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
         if *cursor >= input.len() {
-            return Err("EOF");
+            return Err(Error::EOF);
         }
         let cursor_start = cursor.clone();
         loop {
             // Pass cursor clone, so actual cursor does not advance when checking tag.
             match self.parse_tag(input, &mut cursor.clone()) {
-                Err("EOF") => return Err("EOF"),
+                Err(Error::EOF) => return Err(Error::EOF),
                 Err(_) => self.parse_line(input, cursor)?,
                 Ok(_) => break,
             };
             if *cursor >= input.len() {
-                return Err("EOF");
+                return Err(Error::EOF);
             }
         }
         // Remove the last newline from the output if anything was parsed.
@@ -91,7 +91,7 @@ impl RisParser<'_> {
         let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
         let start_tag = self.parse_tag(input, cursor)?;
         if start_tag != self.start_tag {
-            return Err("reference should start with the start tag");
+            return Err(Error::ParserError("reference should start with the start tag".to_owned()));
         }
         let reference_type = self.parse_to_next_tag(input, cursor)?;
         reference.insert(start_tag, reference_type);
@@ -213,11 +213,11 @@ mod tests {
 
         let input = "";
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
 
         let input = "foobar";
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
 
         let input = "\n\n";
         let mut cursor = 0;
@@ -225,7 +225,7 @@ mod tests {
         assert_eq!(cursor, 1);
         assert_eq!(parser.parse_line(&input, &mut cursor), Ok(""));
         assert_eq!(cursor, 2);
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err("EOF"));
+        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
     }
 
     #[test]
