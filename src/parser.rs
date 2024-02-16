@@ -36,7 +36,7 @@ impl RisParser<'_> {
         let first_char = chars_iter.next().ok_or(Error::EOF)?;
         let second_char = chars_iter.next().ok_or(Error::EOF)?;
         if !self.allowed_tags.contains(&(first_char, second_char)) {
-            return Err(Error::UnknownTag);
+            return Err(Error::UnknownTag(format!("{}{}", first_char, second_char)));
         }
         let output = &input[*cursor..*cursor + 2];
         if !(&input[(*cursor + 2)..(*cursor + 2 + self.post_tag.len())] == self.post_tag) {

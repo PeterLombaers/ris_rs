@@ -1,5 +1,4 @@
 use crate::RisParser;
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyString;
 use std::collections::HashMap;
@@ -7,9 +6,7 @@ use std::collections::HashMap;
 #[pyfunction]
 fn parse(contents: &PyString) -> PyResult<Vec<HashMap<&str, &str>>> {
     let parser = RisParser::default();
-    Ok(parser
-        .parse(contents.to_str()?)
-        .map_err(|e| PyValueError::new_err(e))?)
+    Ok(parser.parse(contents.to_str()?)?)
 }
 
 #[pymodule]
