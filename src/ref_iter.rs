@@ -71,7 +71,7 @@ impl<'a, 'b> Iterator for ReferenceIterator<'a, 'b> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // Parsing to first start tag.
-        let mut start_idx: usize = 0;
+        let start_idx;
         loop {
             match self.take_tag(self.start_tag) {
                 TakeTagResult::EOF => return None,
@@ -149,19 +149,25 @@ UR  - http://example_url.com
 ER  - 
 ";
         let mut ref_iter = ReferenceIterator::default(ref_string);
-        assert_eq!(ref_iter.next(), Some(Ok("TY  - JOUR
+        assert_eq!(
+            ref_iter.next(),
+            Some(Ok("TY  - JOUR
 ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
-ER  - ")));
+ER  - "))
+        );
 
-        assert_eq!(ref_iter.next(), Some(Ok("TY  - JOUR
+        assert_eq!(
+            ref_iter.next(),
+            Some(Ok("TY  - JOUR
 ID  - 12345
 T1  - The title of the reference
 CY  - Germany
 L2  - http://example2.com
 UR  - http://example_url.com
-ER  - ")));
+ER  - "))
+        );
 
         assert_eq!(ref_iter.next(), None);
         assert_eq!(ref_iter.next(), None);
