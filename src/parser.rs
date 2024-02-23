@@ -1,6 +1,7 @@
 use crate::Error;
 use crate::ReferenceIterator;
 use std::collections::{HashMap, HashSet};
+use rayon::prelude::*;
 
 type PResult<T> = Result<T, Error>;
 
@@ -25,6 +26,7 @@ impl RisParser<'_> {
 
         ReferenceIterator::new(&complete_start_tag, &complete_end_tag, &input)
             .into_iter()
+            .par_bridge()
             .map(|ref_string| self.parse_reference(ref_string?))
             .collect()
     }

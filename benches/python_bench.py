@@ -8,7 +8,7 @@ def load_file_rispy(filepath):
 
 
 def load_file_rust(filepath):
-    with open(filepath) as f:
+    with open(filepath, "rb") as f:
         ris.parse(f.read())
 
 
