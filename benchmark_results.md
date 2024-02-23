@@ -8,9 +8,15 @@
 | 2024-02-08 | Also shrink_to_fit | 20.154 ms | 3.3157 µs | 
 | 2024-02-08 | Vector with capacity 5000 | 23.987 ms | 3.6744 µs |
 | 2024-02-08 | Hashmap with capacity 20 | 18.208 ms | 2.9724 µs |
+| 2024-02-23 | Switch to iterator and bytearray | 32.977 ms | 4.6335 µs |
 
+## Python Bindings
+| Date | Change | Rust | Python |
+|------|--------|--------|------|
+| 2024-02-08 | Initial Bindings (String Input) | 74.5673 | 463.6952 |
+| 2024-02-23 | Switch to iterator and bytearray | 72.0756 | 413.2013 |
 
-
+## Remarks
 ### Capacity tests (2024-02-08)
 - Giving the hashmap enough capacity speeds up parsing.
 - Removing unused hashmap memory with `shrink_to_fit` makes single reference slower, but a full file faster. Probably because less memory needs to be moved around in the full file version.
@@ -19,8 +25,7 @@
 
 It seems useful to make sure the hashmap has sufficient capacity but is then shrunk back to actual size. Some trial and error leads to 20 being the right capacity, at least for the Appenzeller-Herzog file.
 
-
-## Python Bindings
-| Date | Change | Python | Rust |
-|------|--------|--------|------|
-| 2024-02-08 | Initial Bindings (String Input) | 74.5673 | 463.6952 |
+### Switch to byte arrays and iterator
+The switch seems to have made the rust part slower, but interestingly enough the python
+benchmark did not really change. Maybe the byte array is more efficient and this offsets
+the slower parsing of the iterator.
