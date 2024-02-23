@@ -22,11 +22,17 @@ pub struct ReferenceIterator<'a, 'b> {
 
 impl<'a, 'b> ReferenceIterator<'a, 'b> {
     pub fn new(start_tag: &'a [u8], end_tag: &'a [u8], text: &'b [u8]) -> Self {
+        let text_without_bom: &[u8];
+        if &text[..3] == "\u{feff}".as_bytes() {
+            text_without_bom = &text[3..]
+        } else {
+            text_without_bom = text
+        }
         ReferenceIterator {
             start_tag,
             end_tag,
-            text,
-            cursor: text.iter().enumerate(),
+            text: text_without_bom,
+            cursor: text_without_bom.iter().enumerate(),
         }
     }
 
@@ -118,10 +124,16 @@ mod tests {
     #[test]
     fn test_take_tag() {
         let mut ref_iter = ReferenceIterator::default("foobar\nbarbar\nfo\nbar\n".as_bytes());
-        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::Present(0));
+        assert_eq!(
+            ref_iter.take_tag("foo".as_bytes()),
+            TakeTagResult::Present(0)
+        );
         assert_eq!(ref_iter.cursor.next(), Some((3, &b'b')));
         ref_iter.take_line();
-        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::NotPresent);
+        assert_eq!(
+            ref_iter.take_tag("foo".as_bytes()),
+            TakeTagResult::NotPresent
+        );
         assert_eq!(ref_iter.cursor.next(), Some((8, &b'a')));
         ref_iter.take_line();
         assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::NewLine);
@@ -155,7 +167,8 @@ ER  -
 ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
-ER  - ".as_bytes()))
+ER  - "
+                .as_bytes()))
         );
 
         assert_eq!(
@@ -166,7 +179,8 @@ T1  - The title of the reference
 CY  - Germany
 L2  - http://example2.com
 UR  - http://example_url.com
-ER  - ".as_bytes()))
+ER  - "
+                .as_bytes()))
         );
 
         assert_eq!(ref_iter.next(), None);
@@ -190,7 +204,8 @@ foobar
 ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
-ER  - ".as_bytes()))
+ER  - "
+                .as_bytes()))
         );
         assert_eq!(ref_iter.next(), None);
         assert_eq!(ref_iter.next(), None);
@@ -213,7 +228,8 @@ foobar
 ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
-ER  - ".as_bytes()))
+ER  - "
+                .as_bytes()))
         );
         assert_eq!(ref_iter.next(), None);
         assert_eq!(ref_iter.next(), None);
@@ -233,6 +249,24 @@ ER  -
         assert_eq!(first_ref.iter().next(), Some(&b'T'));
         let second_ref = ref_iter.next().unwrap().unwrap();
         assert_eq!(second_ref.iter().next(), Some(&b'T'));
+        assert!(ref_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_bom() {
+        let ref_string = "\u{feff}TY  - 
+ER  - "
+            .as_bytes();
+        let mut ref_iter = ReferenceIterator::default(ref_string);
+        assert_eq!(ref_iter.next(), Some(Ok(&ref_string[3..])));
+        assert!(ref_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_empty_ref() {
+        let ref_string = b"TY  - \nER  - ";
+        let mut ref_iter = ReferenceIterator::default(ref_string);
+        assert_eq!(ref_iter.next(), Some(Ok(&ref_string[..])));
         assert!(ref_iter.next().is_none());
     }
 }

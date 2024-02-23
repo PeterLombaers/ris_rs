@@ -5,7 +5,7 @@ use std::fs;
 
 pub fn appenzeller_herzog_handwritten(c: &mut Criterion) {
     let file_path = "benches/files/Appenzeller-Herzog_2019.ris";
-    let contents = fs::read_to_string(file_path).unwrap();
+    let contents = fs::read(file_path).unwrap();
     let parser = RisParser::default();
     c.bench_function("appenzeller_herzog_handwritten", |b| b.iter(|| parser.parse(&contents)));
 }

@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use ris::*;
 
 pub fn parse_reference(c: &mut Criterion) {
-    let reference_string = "TY  - JOUR
+    let reference_string = b"TY  - JOUR
 ID  - 12345
 T1  - Title of reference
 A1  - Marx, Karl
@@ -27,7 +27,7 @@ UR  - http://example_url.com
 ER  - ";
     let parser = RisParser::default();
     c.bench_function("parse_reference", |b| {
-        b.iter(|| parser.parse(&reference_string))
+        b.iter(|| parser.parse(reference_string))
     });
 }
 
