@@ -10,6 +10,7 @@
 | 2024-02-08 | Hashmap with capacity 20 | 18.208 ms | 2.9724 µs |
 | 2024-02-23 | Switch to iterator and bytearray | 32.977 ms | 4.6335 µs |
 | 2024-02-23 | Use Rayon for parallelism | 21.466 ms | 475.59 µs |
+| 2024-02-23 | Inline functions | 15.792 ms | 478.99 µs |
 
 ## Python Bindings
 | Date | Change | Rust | Python |
@@ -17,6 +18,7 @@
 | 2024-02-08 | Initial Bindings (String Input) | 74.5673 | 463.6952 |
 | 2024-02-23 | Switch to iterator and bytearray | 53.4637 | 413.2013 |
 | 2024-02-23 | Use Rayon for parallelism | 38.9063 | 411.1623 |
+| 2024-02-23 | Inline functions | 45.0779 | 412.7568 |
 
 ## Remarks
 ### Capacity tests (2024-02-08)
@@ -38,3 +40,9 @@ to make the parsing of the individual references more elaborate.
 ### Using Rayon for parellilism
 This was amazingly easy and there is a nice speedup. Only in the case of an individual reference
 did it get much slower. But that's to be expected because of the overhead of making a threadpool.
+
+### Inlining functions
+When calling from Rust, inlining functions seems to make a difference. Especially 
+inlining `RisParser.parse_reference` makes the real difference. However, when calling
+from Python, inlining actually slowed things down. Maybe the combination of inlining +
+PyO3 is not good?
