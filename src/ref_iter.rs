@@ -13,15 +13,15 @@ enum TakeTagResult {
 }
 
 #[derive(Debug, Clone)]
-pub struct ReferenceIterator<'a> {
+pub struct ReferenceIterator<'a, 'b> {
     start_tag: &'a str,
     end_tag: &'a str,
-    text: &'a str,
-    cursor: Enumerate<std::str::Chars<'a>>,
+    text: &'b str,
+    cursor: Enumerate<std::str::Chars<'b>>,
 }
 
-impl<'a> ReferenceIterator<'a> {
-    pub fn new(start_tag: &'a str, end_tag: &'a str, text: &'a str) -> Self {
+impl<'a, 'b> ReferenceIterator<'a, 'b> {
+    pub fn new(start_tag: &'a str, end_tag: &'a str, text: &'b str) -> Self {
         ReferenceIterator {
             start_tag,
             end_tag,
@@ -30,7 +30,7 @@ impl<'a> ReferenceIterator<'a> {
         }
     }
 
-    pub fn default(text: &'a str) -> Self {
+    pub fn default(text: &'b str) -> Self {
         ReferenceIterator::new("TY  - ", "ER  - ", text)
     }
 
@@ -66,8 +66,8 @@ impl<'a> ReferenceIterator<'a> {
     }
 }
 
-impl<'a> Iterator for ReferenceIterator<'a> {
-    type Item = PResult<&'a str>;
+impl<'a, 'b> Iterator for ReferenceIterator<'a, 'b> {
+    type Item = PResult<&'b str>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Parsing to first start tag.
