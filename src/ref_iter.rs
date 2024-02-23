@@ -21,7 +21,7 @@ pub struct ReferenceIterator<'a> {
 }
 
 impl<'a> ReferenceIterator<'a> {
-    fn new(start_tag: &'a str, end_tag: &'a str, text: &'a str) -> Self {
+    pub fn new(start_tag: &'a str, end_tag: &'a str, text: &'a str) -> Self {
         ReferenceIterator {
             start_tag,
             end_tag,
@@ -30,7 +30,7 @@ impl<'a> ReferenceIterator<'a> {
         }
     }
 
-    fn default(text: &'a str) -> Self {
+    pub fn default(text: &'a str) -> Self {
         ReferenceIterator::new("TY  - ", "ER  - ", text)
     }
 
