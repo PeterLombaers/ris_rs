@@ -1,54 +1,85 @@
-use std::collections::{HashMap, HashSet};
 use crate::Error;
+use crate::ReferenceIterator;
+use std::collections::{HashMap, HashSet};
 
 type PResult<T> = Result<T, Error>;
 
-// If I use a visitor, I can check the allowed tags in the visitor.
+fn parse_utf8(a: &[u8]) -> PResult<&str> {
+    std::str::from_utf8(a).map_err(|_| Error::ParserError(format!("invalid utf-8 in tag {:?}", a)))
+}
+
+#[derive(Debug, Clone)]
 pub struct RisParser<'a> {
-    start_tag: &'a str,
-    end_tag: &'a str,
-    allowed_tags: HashSet<(char, char)>,
-    post_tag: &'a str,
+    start_tag: &'a [u8],
+    end_tag: &'a [u8],
+    allowed_tags: HashSet<[u8; 2]>,
+    post_tag: &'a [u8],
 }
 
 impl RisParser<'_> {
-    pub fn parse<'a>(&self, input: &'a str) -> PResult<Vec<HashMap<&'a str, &'a str>>> {
-        let mut cursor = 0;
-        let mut references = Vec::new();
-        // Skip BOM if it's there.
-        if input.chars().next() == Some('\u{feff}') {
-            cursor += 3
-        }
-        self.parse_to_next_tag(input, &mut cursor)?;
-        while cursor < input.len() {
-            references.push(self.parse_reference(input, &mut cursor)?);
-            match self.parse_to_next_tag(input, &mut cursor) {
-                Ok(_) => continue,
-                Err(Error::EOF) => break,
-                Err(e) => return Err(e),
-            };
-        }
-        Ok(references)
+    pub fn parse<'a>(&self, input: &'a [u8]) -> PResult<Vec<HashMap<&'a str, &'a str>>> {
+        let mut complete_start_tag = Vec::from(self.start_tag);
+        complete_start_tag.append(&mut Vec::from(self.post_tag));
+        let mut complete_end_tag = Vec::from(self.end_tag);
+        complete_end_tag.append(&mut Vec::from(self.post_tag));
+
+        ReferenceIterator::new(&complete_start_tag, &complete_end_tag, &input)
+            .into_iter()
+            .map(|ref_string| self.parse_reference(ref_string?))
+            .collect()
     }
 
-    fn parse_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
-        let mut chars_iter = input[*cursor..].chars();
+    fn parse_reference<'a>(&self, input: &'a [u8]) -> PResult<HashMap<&'a str, &'a str>> {
+        let mut cursor = 0;
+        let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
+
+        while cursor < input.len() {
+            let tag = self.parse_tag(input, &mut cursor)?;
+            // Ignore any end tag content.
+            if tag == self.end_tag {
+                break;
+            }
+            let content_start = cursor.clone();
+            match self.parse_to_next_tag(input, &mut cursor) {
+                Ok(s) => {
+                    reference.insert(parse_utf8(tag)?, parse_utf8(s)?);
+                }
+                Err(Error::EOF) => {
+                    reference.insert(parse_utf8(tag)?, parse_utf8(&input[content_start..])?);
+                    break;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        reference.shrink_to_fit();
+        Ok(reference)
+    }
+
+    /// Parse a tag from the cursor position and return the tag without the post tag.
+    ///
+    /// Check if there is a tag followed by the post-tag string at the current position.
+    /// If not, will return an error. If there is as tag, it will return it, and leave
+    /// the cursor after the last character of the post-tag string.
+    fn parse_tag<'a>(&self, input: &'a [u8], cursor: &mut usize) -> PResult<&'a [u8]> {
+        let mut chars_iter = input[*cursor..].iter();
         let first_char = chars_iter.next().ok_or(Error::EOF)?;
         let second_char = chars_iter.next().ok_or(Error::EOF)?;
-        if !self.allowed_tags.contains(&(first_char, second_char)) {
+        if !self.allowed_tags.contains(&[*first_char, *second_char]) {
             return Err(Error::UnknownTag(format!("{}{}", first_char, second_char)));
         }
         let output = &input[*cursor..*cursor + 2];
         if !(&input[(*cursor + 2)..(*cursor + 2 + self.post_tag.len())] == self.post_tag) {
-            return Err(Error::ParserError("tag should be followed by post-tag string".to_owned()));
+            return Err(Error::ParserError(
+                "tag should be followed by post-tag string".to_owned(),
+            ));
         }
         *cursor += 2 + self.post_tag.len();
         Ok(output)
     }
 
-    fn parse_line<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
-        let mut char_iter = input[*cursor..].chars().enumerate();
-        let (idx, _) = char_iter.find(|(_, c)| *c == '\n').ok_or(Error::EOF)?;
+    fn parse_line<'a>(&self, input: &'a [u8], cursor: &mut usize) -> PResult<&'a [u8]> {
+        let mut char_iter = input[*cursor..].iter().enumerate();
+        let (idx, _) = char_iter.find(|(_, c)| *c == &b'\n').ok_or(Error::EOF)?;
         let output = &input[*cursor..(*cursor + idx)];
         *cursor += idx + 1;
         Ok(output)
@@ -59,7 +90,7 @@ impl RisParser<'_> {
     // Right now I return a slice of the input string. This means that multiline content
     // keeps the newlines in between the lines. If I return owned copies and create a new
     // string and remove the newlines while parsing.
-    fn parse_to_next_tag<'a>(&self, input: &'a str, cursor: &mut usize) -> PResult<&'a str> {
+    fn parse_to_next_tag<'a>(&self, input: &'a [u8], cursor: &mut usize) -> PResult<&'a [u8]> {
         if *cursor >= input.len() {
             return Err(Error::EOF);
         }
@@ -67,7 +98,7 @@ impl RisParser<'_> {
         loop {
             // Pass cursor clone, so actual cursor does not advance when checking tag.
             match self.parse_tag(input, &mut cursor.clone()) {
-                Err(Error::EOF) => return Err(Error::EOF),
+                Err(Error::EOF) => return Ok(&input[cursor_start..]),
                 Err(_) => self.parse_line(input, cursor)?,
                 Ok(_) => break,
             };
@@ -79,111 +110,83 @@ impl RisParser<'_> {
         if *cursor > cursor_start {
             Ok(&input[cursor_start..*cursor - 1])
         } else {
-            Ok("")
+            Ok(&[])
         }
-    }
-
-    fn parse_reference<'a>(
-        &self,
-        input: &'a str,
-        cursor: &mut usize,
-    ) -> PResult<HashMap<&'a str, &'a str>> {
-        let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
-        let start_tag = self.parse_tag(input, cursor)?;
-        if start_tag != self.start_tag {
-            return Err(Error::ParserError("reference should start with the start tag".to_owned()));
-        }
-        let reference_type = self.parse_to_next_tag(input, cursor)?;
-        reference.insert(start_tag, reference_type);
-        // Extra check that cursor does not exceed input length, so that we definitely
-        // break out of the while loop.
-        while *cursor < input.len() {
-            let tag = self.parse_tag(input, cursor)?;
-            if tag == self.end_tag {
-                break;
-            }
-            let content = self.parse_to_next_tag(input, cursor)?;
-            reference.insert(tag, content);
-        }
-        // Since we didn't parse content after the end_tag we need to advance past the newline
-        *cursor += 1;
-        reference.shrink_to_fit();
-        Ok(reference)
     }
 }
 
 impl Default for RisParser<'_> {
     fn default() -> Self {
         Self {
-            start_tag: "TY",
-            end_tag: "ER",
-            post_tag: "  - ",
+            start_tag: b"TY",
+            end_tag: b"ER",
+            post_tag: b"  - ",
             allowed_tags: HashSet::from([
-                ('T', 'Y'),
-                ('A', '1'),
-                ('A', '2'),
-                ('A', '3'),
-                ('A', '4'),
-                ('A', 'B'),
-                ('A', 'D'),
-                ('A', 'N'),
-                ('A', 'U'),
-                ('C', '1'),
-                ('C', '2'),
-                ('C', '3'),
-                ('C', '4'),
-                ('C', '5'),
-                ('C', '6'),
-                ('C', '7'),
-                ('C', '8'),
-                ('C', 'A'),
-                ('C', 'N'),
-                ('C', 'Y'),
-                ('D', 'A'),
-                ('D', 'B'),
-                ('D', 'O'),
-                ('D', 'P'),
-                ('E', 'T'),
-                ('E', 'P'),
-                ('I', 'D'),
-                ('I', 'S'),
-                ('J', '2'),
-                ('J', 'A'),
-                ('J', 'F'),
-                ('J', 'O'),
-                ('K', 'W'),
-                ('L', '1'),
-                ('L', '2'),
-                ('L', '4'),
-                ('L', 'A'),
-                ('L', 'B'),
-                ('M', '1'),
-                ('M', '3'),
-                ('N', '1'),
-                ('N', '2'),
-                ('N', 'V'),
-                ('O', 'P'),
-                ('P', 'B'),
-                ('P', 'Y'),
-                ('R', 'I'),
-                ('R', 'N'),
-                ('R', 'P'),
-                ('S', 'E'),
-                ('S', 'N'),
-                ('S', 'P'),
-                ('S', 'T'),
-                ('T', '1'),
-                ('T', '2'),
-                ('T', '3'),
-                ('T', 'A'),
-                ('T', 'I'),
-                ('T', 'T'),
-                ('U', 'R'),
-                ('V', 'L'),
-                ('Y', '1'),
-                ('Y', '2'),
-                ('E', 'R'),
-                ('U', 'K'),
+                [b'T', b'Y'],
+                [b'A', b'1'],
+                [b'A', b'2'],
+                [b'A', b'3'],
+                [b'A', b'4'],
+                [b'A', b'B'],
+                [b'A', b'D'],
+                [b'A', b'N'],
+                [b'A', b'U'],
+                [b'C', b'1'],
+                [b'C', b'2'],
+                [b'C', b'3'],
+                [b'C', b'4'],
+                [b'C', b'5'],
+                [b'C', b'6'],
+                [b'C', b'7'],
+                [b'C', b'8'],
+                [b'C', b'A'],
+                [b'C', b'N'],
+                [b'C', b'Y'],
+                [b'D', b'A'],
+                [b'D', b'B'],
+                [b'D', b'O'],
+                [b'D', b'P'],
+                [b'E', b'T'],
+                [b'E', b'P'],
+                [b'I', b'D'],
+                [b'I', b'S'],
+                [b'J', b'2'],
+                [b'J', b'A'],
+                [b'J', b'F'],
+                [b'J', b'O'],
+                [b'K', b'W'],
+                [b'L', b'1'],
+                [b'L', b'2'],
+                [b'L', b'4'],
+                [b'L', b'A'],
+                [b'L', b'B'],
+                [b'M', b'1'],
+                [b'M', b'3'],
+                [b'N', b'1'],
+                [b'N', b'2'],
+                [b'N', b'V'],
+                [b'O', b'P'],
+                [b'P', b'B'],
+                [b'P', b'Y'],
+                [b'R', b'I'],
+                [b'R', b'N'],
+                [b'R', b'P'],
+                [b'S', b'E'],
+                [b'S', b'N'],
+                [b'S', b'P'],
+                [b'S', b'T'],
+                [b'T', b'1'],
+                [b'T', b'2'],
+                [b'T', b'3'],
+                [b'T', b'A'],
+                [b'T', b'I'],
+                [b'T', b'T'],
+                [b'U', b'R'],
+                [b'V', b'L'],
+                [b'Y', b'1'],
+                [b'Y', b'2'],
+                [b'U', b'K'],
+                [b'E', b'R'],
             ]),
         }
     }
@@ -195,10 +198,10 @@ mod tests {
 
     #[test]
     fn test_parse_line() {
-        let start_tag = "TY";
-        let end_tag = "ER";
-        let post_tag = "  - ";
-        let allowed_tags = HashSet::from([('A', 'B')]);
+        let start_tag = b"TY";
+        let end_tag = b"ER";
+        let post_tag = b"  - ";
+        let allowed_tags = HashSet::from([[b'A', b'B']]);
         let parser = RisParser {
             start_tag,
             end_tag,
@@ -206,34 +209,34 @@ mod tests {
             post_tag,
         };
 
-        let input = "aa\nb";
+        let input = b"aa\nb";
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor).unwrap(), "aa");
+        assert_eq!(parser.parse_line(input, &mut cursor).unwrap(), b"aa");
         assert_eq!(cursor, 3);
 
-        let input = "";
+        let input = &[];
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
+        assert_eq!(parser.parse_line(input, &mut cursor), Err(Error::EOF));
 
-        let input = "foobar";
+        let input = b"foobar";
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
+        assert_eq!(parser.parse_line(input, &mut cursor), Err(Error::EOF));
 
-        let input = "\n\n";
+        let input = b"\n\n";
         let mut cursor = 0;
-        assert_eq!(parser.parse_line(&input, &mut cursor), Ok(""));
+        assert_eq!(parser.parse_line(input, &mut cursor), Ok(&input[0..0]));
         assert_eq!(cursor, 1);
-        assert_eq!(parser.parse_line(&input, &mut cursor), Ok(""));
+        assert_eq!(parser.parse_line(input, &mut cursor), Ok(&input[0..0]));
         assert_eq!(cursor, 2);
-        assert_eq!(parser.parse_line(&input, &mut cursor), Err(Error::EOF));
+        assert_eq!(parser.parse_line(input, &mut cursor), Err(Error::EOF));
     }
 
     #[test]
     fn test_parse_tag() {
-        let start_tag = "TY";
-        let end_tag = "ER";
-        let post_tag = "  - ";
-        let allowed_tags = HashSet::from([('A', 'B')]);
+        let start_tag = b"TY";
+        let end_tag = b"ER";
+        let post_tag = b"  - ";
+        let allowed_tags = HashSet::from([[b'A', b'B']]);
         let parser = RisParser {
             start_tag,
             end_tag,
@@ -241,68 +244,75 @@ mod tests {
             post_tag,
         };
 
-        let input = "AB  - b";
+        let input = b"AB  - b";
         let mut cursor = 0;
-        assert_eq!(parser.parse_tag(&input, &mut cursor).unwrap(), "AB");
+        assert_eq!(parser.parse_tag(input, &mut cursor).unwrap(), b"AB");
         assert_eq!(cursor, 6);
 
-        let input = "AA  - b";
+        let input = b"AA  - b";
         let mut cursor = 0;
-        assert!(parser.parse_tag(&input, &mut cursor).is_err());
+        assert!(parser.parse_tag(input, &mut cursor).is_err());
 
-        let input = "BB  - b";
+        let input = b"BB  - b";
         let mut cursor = 0;
-        assert!(parser.parse_tag(&input, &mut cursor).is_err());
+        assert!(parser.parse_tag(input, &mut cursor).is_err());
 
-        let input = "AB - b";
+        let input = b"AB - b";
         let mut cursor = 0;
-        assert!(parser.parse_tag(&input, &mut cursor).is_err());
+        assert!(parser.parse_tag(input, &mut cursor).is_err());
     }
 
     #[test]
     fn test_parse_to_next_tag() {
-        let start_tag = "TY";
-        let end_tag = "ER";
-        let post_tag = "  - ";
-        let allowed_tags = HashSet::from([('A', 'B')]);
+        let start_tag = b"TY";
+        let end_tag = b"ER";
+        let post_tag = b"  - ";
+        let allowed_tags = HashSet::from([[b'A', b'B']]);
         let parser = RisParser {
             start_tag,
             end_tag,
             allowed_tags,
             post_tag,
         };
-        let input = "AB  - ";
+        let input = b"AB  - ";
         let mut cursor = 0;
-        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), "");
+        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), []);
         assert_eq!(cursor, 0);
 
-        let input = "\nAB  - ";
+        let input = b"\nAB  - ";
         let mut cursor = 0;
-        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), "");
+        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), []);
         assert_eq!(cursor, 1);
 
-        let input = "aa\nAB  - b";
+        let input = b"aa\nAB  - b";
         let mut cursor = 0;
-        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), "aa");
+        assert_eq!(parser.parse_to_next_tag(input, &mut cursor).unwrap(), b"aa");
 
-        let input = "aa\naa\naa\nAB  - b";
+        let input = b"aa\naa\naa\nAB  - b";
         let mut cursor = 0;
         assert_eq!(
             parser.parse_to_next_tag(input, &mut cursor).unwrap(),
-            "aa\naa\naa"
+            b"aa\naa\naa"
         );
 
-        let input = "aa\naa\n";
+        let input = b"aa\n\nAB  - b";
+        let mut cursor = 0;
+        assert_eq!(
+            parser.parse_to_next_tag(input, &mut cursor).unwrap(),
+            b"aa\n"
+        );
+
+        let input = b"aa\naa\n";
         let mut cursor = 0;
         assert!(parser.parse_to_next_tag(input, &mut cursor).is_err());
     }
 
     #[test]
     fn test_parse_reference() {
-        let start_tag = "TY";
-        let end_tag = "ER";
-        let post_tag = "  - ";
-        let allowed_tags = HashSet::from([('A', 'A'), ('A', 'B'), ('T', 'Y'), ('E', 'R')]);
+        let start_tag = b"TY";
+        let end_tag = b"ER";
+        let post_tag = b"  - ";
+        let allowed_tags = HashSet::from([[b'A', b'A'], [b'A', b'B'], [b'T', b'Y'], [b'E', b'R']]);
         let parser = RisParser {
             start_tag,
             end_tag,
@@ -310,42 +320,40 @@ mod tests {
             post_tag,
         };
 
-        let input = "TY  - ref_type
+        let input = b"TY  - ref_type
 AA  - val1
 AB  - val2
 ER  - 
 aaa";
         let output = HashMap::from([("TY", "ref_type"), ("AA", "val1"), ("AB", "val2")]);
-        let mut cursor = 0;
-        assert_eq!(parser.parse_reference(input, &mut cursor).unwrap(), output);
-        assert_eq!(&input[cursor..], "aaa");
+        assert_eq!(parser.parse_reference(input).unwrap(), output);
     }
 
     #[test]
     fn test_eof() {
         let parser = RisParser::default();
-        let input = "TY  - JOUR
+        let input = b"TY  - JOUR
 A1  - author
 ER  - ";
-        assert!(parser.parse(&input).is_ok());
+        assert!(parser.parse(input).is_ok());
 
-        let input = "TY  - JOUR
+        let input = b"TY  - JOUR
 A1  - author
 ER  - 
 ";
-        assert!(parser.parse(&input).is_ok());
+        assert!(parser.parse(input).is_ok());
 
-        let input = "TY  - JOUR
+        let input = b"TY  - JOUR
 A1  - author
 ER  - 
 foo
 bar   ";
-        assert!(parser.parse(&input).is_ok());
+        assert!(parser.parse(input).is_ok());
     }
 
     #[test]
     fn test_multiple_references() {
-        let ref_string = "1.
+        let ref_string = b"1.
 TY  - JOUR
 ID  - 12345
 T1  - Title of reference
@@ -397,7 +405,7 @@ ER  -
 ";
         let parser = RisParser::default();
 
-        let references = parser.parse(&ref_string).unwrap();
+        let references = parser.parse(ref_string).unwrap();
         assert_eq!(references.len(), 2);
         assert_eq!(*references[0].get("T1").unwrap(), "Title of reference");
         assert_eq!(*references[0].get("SP").unwrap(), "e0815");

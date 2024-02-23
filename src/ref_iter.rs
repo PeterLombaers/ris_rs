@@ -14,44 +14,44 @@ enum TakeTagResult {
 
 #[derive(Debug, Clone)]
 pub struct ReferenceIterator<'a, 'b> {
-    start_tag: &'a str,
-    end_tag: &'a str,
-    text: &'b str,
-    cursor: Enumerate<std::str::Chars<'b>>,
+    start_tag: &'a [u8],
+    end_tag: &'a [u8],
+    text: &'b [u8],
+    cursor: Enumerate<std::slice::Iter<'b, u8>>,
 }
 
 impl<'a, 'b> ReferenceIterator<'a, 'b> {
-    pub fn new(start_tag: &'a str, end_tag: &'a str, text: &'b str) -> Self {
+    pub fn new(start_tag: &'a [u8], end_tag: &'a [u8], text: &'b [u8]) -> Self {
         ReferenceIterator {
             start_tag,
             end_tag,
             text,
-            cursor: text.chars().enumerate(),
+            cursor: text.iter().enumerate(),
         }
     }
 
-    pub fn default(text: &'b str) -> Self {
-        ReferenceIterator::new("TY  - ", "ER  - ", text)
+    pub fn default(text: &'b [u8]) -> Self {
+        ReferenceIterator::new("TY  - ".as_bytes(), "ER  - ".as_bytes(), text)
     }
 
     /// Move the cursor to the next newline character and return its index.
     fn take_line(&mut self) -> Option<usize> {
         loop {
             let (idx, c) = self.cursor.next()?;
-            if c == '\n' {
+            if *c == b'\n' {
                 return Some(idx);
             }
         }
     }
 
     /// Check if the tag occurs at the current position.
-    fn take_tag(&mut self, tag: &str) -> TakeTagResult {
+    fn take_tag(&mut self, tag: &[u8]) -> TakeTagResult {
         let mut idx: usize = 0;
-        for c in tag.chars() {
+        for c in tag.iter() {
             match self.cursor.next() {
                 None => return TakeTagResult::EOF,
                 Some((current_idx, current_char)) => {
-                    if current_char == '\n' {
+                    if *current_char == b'\n' {
                         return TakeTagResult::NewLine;
                     }
                     if current_char != c {
@@ -67,7 +67,7 @@ impl<'a, 'b> ReferenceIterator<'a, 'b> {
 }
 
 impl<'a, 'b> Iterator for ReferenceIterator<'a, 'b> {
-    type Item = PResult<&'b str>;
+    type Item = PResult<&'b [u8]>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // Parsing to first start tag.
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_take_line() {
-        let mut ref_iter = ReferenceIterator::default("a\nbcd\negfh");
+        let mut ref_iter = ReferenceIterator::default("a\nbcd\negfh".as_bytes());
         assert_eq!(ref_iter.take_line(), Some(1));
         assert_eq!(ref_iter.take_line(), Some(5));
         assert_eq!(ref_iter.take_line(), None);
@@ -117,17 +117,17 @@ mod tests {
 
     #[test]
     fn test_take_tag() {
-        let mut ref_iter = ReferenceIterator::default("foobar\nbarbar\nfo\nbar\n");
-        assert_eq!(ref_iter.take_tag("foo"), TakeTagResult::Present(0));
-        assert_eq!(ref_iter.cursor.next(), Some((3, 'b')));
+        let mut ref_iter = ReferenceIterator::default("foobar\nbarbar\nfo\nbar\n".as_bytes());
+        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::Present(0));
+        assert_eq!(ref_iter.cursor.next(), Some((3, &b'b')));
         ref_iter.take_line();
-        assert_eq!(ref_iter.take_tag("foo"), TakeTagResult::NotPresent);
-        assert_eq!(ref_iter.cursor.next(), Some((8, 'a')));
+        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::NotPresent);
+        assert_eq!(ref_iter.cursor.next(), Some((8, &b'a')));
         ref_iter.take_line();
-        assert_eq!(ref_iter.take_tag("foo"), TakeTagResult::NewLine);
-        assert_eq!(ref_iter.cursor.next(), Some((17, 'b')));
+        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::NewLine);
+        assert_eq!(ref_iter.cursor.next(), Some((17, &b'b')));
         ref_iter.take_line();
-        assert_eq!(ref_iter.take_tag("foo"), TakeTagResult::EOF);
+        assert_eq!(ref_iter.take_tag("foo".as_bytes()), TakeTagResult::EOF);
     }
 
     #[test]
@@ -148,14 +148,14 @@ L2  - http://example2.com
 UR  - http://example_url.com
 ER  - 
 ";
-        let mut ref_iter = ReferenceIterator::default(ref_string);
+        let mut ref_iter = ReferenceIterator::default(ref_string.as_bytes());
         assert_eq!(
             ref_iter.next(),
             Some(Ok("TY  - JOUR
 ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
-ER  - "))
+ER  - ".as_bytes()))
         );
 
         assert_eq!(
@@ -166,10 +166,73 @@ T1  - The title of the reference
 CY  - Germany
 L2  - http://example2.com
 UR  - http://example_url.com
-ER  - "))
+ER  - ".as_bytes()))
         );
 
         assert_eq!(ref_iter.next(), None);
         assert_eq!(ref_iter.next(), None);
+    }
+
+    #[test]
+    fn test_after_end_tag() {
+        let ref_string = "1.
+TY  - JOUR
+ID  - 12345
+A2  - Glattauer, Daniel
+UR  - http://example_url.com
+ER  - 
+foobar
+";
+        let mut ref_iter = ReferenceIterator::default(ref_string.as_bytes());
+        assert_eq!(
+            ref_iter.next(),
+            Some(Ok("TY  - JOUR
+ID  - 12345
+A2  - Glattauer, Daniel
+UR  - http://example_url.com
+ER  - ".as_bytes()))
+        );
+        assert_eq!(ref_iter.next(), None);
+        assert_eq!(ref_iter.next(), None);
+    }
+
+    #[test]
+    fn test_before_start_tag() {
+        let ref_string = "
+\n\nTY  - JOUR
+ID  - 12345
+A2  - Glattauer, Daniel
+UR  - http://example_url.com
+ER  - 
+foobar
+";
+        let mut ref_iter = ReferenceIterator::default(ref_string.as_bytes());
+        assert_eq!(
+            ref_iter.next(),
+            Some(Ok("TY  - JOUR
+ID  - 12345
+A2  - Glattauer, Daniel
+UR  - http://example_url.com
+ER  - ".as_bytes()))
+        );
+        assert_eq!(ref_iter.next(), None);
+        assert_eq!(ref_iter.next(), None);
+    }
+
+    #[test]
+    fn test_double_byte_char() {
+        let ref_string = "
+TY  - ©
+ER  - 
+
+TY  - JOUR
+ER  - 
+";
+        let mut ref_iter = ReferenceIterator::default(&ref_string.as_bytes());
+        let first_ref = ref_iter.next().unwrap().unwrap();
+        assert_eq!(first_ref.iter().next(), Some(&b'T'));
+        let second_ref = ref_iter.next().unwrap().unwrap();
+        assert_eq!(second_ref.iter().next(), Some(&b'T'));
+        assert!(ref_iter.next().is_none());
     }
 }

@@ -1,12 +1,12 @@
 use crate::RisParser;
 use pyo3::prelude::*;
-use pyo3::types::PyString;
+use pyo3::types::PyBytes;
 use std::collections::HashMap;
 
 #[pyfunction]
-fn parse(contents: &PyString) -> PyResult<Vec<HashMap<&str, &str>>> {
+fn parse(contents: &PyBytes) -> PyResult<Vec<HashMap<&str, &str>>> {
     let parser = RisParser::default();
-    Ok(parser.parse(contents.to_str()?)?)
+    Ok(parser.parse(contents.as_bytes())?)
 }
 
 #[pymodule]
