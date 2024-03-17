@@ -94,30 +94,13 @@ impl<'a, 'b, const N: usize> Iterator for ContentIterator<'a, 'b, N> {
     }
 }
 
-impl<'a, 'b> ContentIterator<'a, 'b, 6> {
-    pub fn default(text: &'b [u8]) -> Self {
-        let allowed_tags = HashSet::from([
-            b"TY  - ", b"A1  - ", b"A2  - ", b"A3  - ", b"A4  - ", b"AB  - ", b"AD  - ", b"AN  - ",
-            b"AU  - ", b"C1  - ", b"C2  - ", b"C3  - ", b"C4  - ", b"C5  - ", b"C6  - ", b"C7  - ",
-            b"C8  - ", b"CA  - ", b"CN  - ", b"CY  - ", b"DA  - ", b"DB  - ", b"DO  - ", b"DP  - ",
-            b"ET  - ", b"EP  - ", b"ID  - ", b"IS  - ", b"J2  - ", b"JA  - ", b"JF  - ", b"JO  - ",
-            b"KW  - ", b"L1  - ", b"L2  - ", b"L4  - ", b"LA  - ", b"LB  - ", b"M1  - ", b"M3  - ",
-            b"N1  - ", b"N2  - ", b"NV  - ", b"OP  - ", b"PB  - ", b"PY  - ", b"RI  - ", b"RN  - ",
-            b"RP  - ", b"SE  - ", b"SN  - ", b"SP  - ", b"ST  - ", b"T1  - ", b"T2  - ", b"T3  - ",
-            b"TA  - ", b"TI  - ", b"TT  - ", b"UR  - ", b"VL  - ", b"Y1  - ", b"Y2  - ", b"UK  - ",
-            b"ER  - ",
-        ]);
-        ContentIterator::new(allowed_tags, text)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_take_line() {
-        let mut content_iter = ContentIterator::default(b"foo\n\nbar");
+        let mut content_iter = ContentIterator::new(HashSet::from([b""]), b"foo\n\nbar");
         assert!(content_iter.take_line().is_some());
         assert_eq!(content_iter.cursor, 4);
         assert!(content_iter.take_line().is_some());
@@ -129,15 +112,15 @@ mod tests {
     #[test]
     fn test_take_tag() {
         assert_eq!(
-            ContentIterator::default(b"TY  - foo bar").take_tag(),
+            ContentIterator::new(HashSet::from([b"TY  - "]), b"TY  - foo bar").take_tag(),
             TakeTagResult::Present(b"TY  - ")
         );
         assert_eq!(
-            ContentIterator::default(b"QQ  - foo bar").take_tag(),
+            ContentIterator::new(HashSet::from([b"TY  - "]), b"QQ  - foo bar").take_tag(),
             TakeTagResult::NotPresent
         );
         assert_eq!(
-            ContentIterator::default(b"TY").take_tag(),
+            ContentIterator::new(HashSet::from([b"TY  - "]), b"TY").take_tag(),
             TakeTagResult::EOF
         );
     }
@@ -149,7 +132,10 @@ ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
 ER  - ";
-        let mut content_iter = ContentIterator::default(ref_bytes);
+        let mut content_iter = ContentIterator::new(
+            HashSet::from([b"TY  - ", b"A2  - ", b"ID  - ", b"UR  - ", b"ER  - "]),
+            ref_bytes,
+        );
         assert_eq!(
             content_iter.next(),
             Some(Ok(("TY  - ".as_bytes(), "JOUR".as_bytes())))
