@@ -11,6 +11,7 @@
 | 2024-02-23 | Switch to iterator and bytearray | 32.977 ms | 4.6335 µs |
 | 2024-02-23 | Use Rayon for parallelism | 21.466 ms | 475.59 µs |
 | 2024-02-23 | Inline functions | 15.792 ms | 478.99 µs |
+| 2024-03-17 | Content Iterator | 23.067 ms | 503.06 µs |
 
 ## Python Bindings
 | Date | Change | Rust | Python |
@@ -19,6 +20,7 @@
 | 2024-02-23 | Switch to iterator and bytearray | 53.4637 | 413.2013 |
 | 2024-02-23 | Use Rayon for parallelism | 38.9063 | 411.1623 |
 | 2024-02-23 | Inline functions | 45.0779 | 412.7568 |
+| 2024-03-17 | Content Iterator | 48.1026 | 440.7258 |
 
 ## Remarks
 ### Capacity tests (2024-02-08)
