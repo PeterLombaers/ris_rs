@@ -51,6 +51,21 @@ impl<'a, 'b> ReferenceIterator<'a, 'b> {
     }
 
     /// Check if the tag occurs at the current position.
+    /// 
+    /// Returns
+    /// -------
+    /// TakeTagResult::EOF
+    ///     If the file ended while checking for the tag. The cursor will be past the
+    ///     end of the text.
+    /// TakeTagResult::NewLine
+    ///     If the line ended while checking for the tag. The cursor will be at the
+    ///     start of the new line.
+    /// TakeTagResult::NotPresent
+    ///     If the line does start with the tag. The cursor will be at the first byte
+    ///     that was not part of the tag.
+    /// TakeTagResult::Present(idx)
+    ///     If the tag is present. The value of idx is the index of the start of the
+    ///     tag in the text.
     fn take_tag(&mut self, tag: &[u8]) -> TakeTagResult {
         let mut idx: usize = 0;
         for c in tag.iter() {
