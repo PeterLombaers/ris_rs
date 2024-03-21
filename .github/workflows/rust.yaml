@@ -57,10 +57,9 @@ jobs:
         echo "System Information:" | tee -a benches/results.txt
         echo "Number of Cores: $(nproc)" | tee -a benches/results.txt
         echo "============================== Rust Benchmarks ===============================" | tee -a benches/results.txt
-
     - name: Run Rust benchmarks and write results
       run: |
-        cargo bench | tee benches/results.txt
+        cargo bench | tee -a benches/results.txt
     - name: Run Python benchmarks and append results
       run: |
         source .venv/bin/activate
