@@ -18,18 +18,16 @@ test ref_iter::tests::test_take_tag ... ignored
 test result: ok. 0 passed; 0 failed; 14 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 appenzeller_herzog_handwritten
-                        time:   [6.3305 ms 6.3402 ms 6.3497 ms]
-Found 7 outliers among 100 measurements (7.00%)
-  2 (2.00%) low severe
-  3 (3.00%) low mild
-  1 (1.00%) high mild
+                        time:   [8.7589 ms 8.7772 ms 8.7947 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) low severe
   1 (1.00%) high severe
 
-parse_reference         time:   [18.205 µs 18.282 µs 18.357 µs]
-Found 10 outliers among 100 measurements (10.00%)
-  7 (7.00%) low severe
-  1 (1.00%) low mild
-  2 (2.00%) high mild
+parse_reference         time:   [14.377 µs 14.450 µs 14.529 µs]
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) low severe
+  3 (3.00%) high mild
+  4 (4.00%) high severe
 
 ============================= test session starts ==============================
 platform linux -- Python 3.11.8, pytest-8.1.1, pluggy-1.4.0
@@ -45,13 +43,13 @@ benches/python_bench.py ....                                             [100%]
 ------------------------------------------------------------------------------------------ benchmark: 4 tests -----------------------------------------------------------------------------------------
 Name (time in ms)                       Min                 Max                Mean            StdDev              Median               IQR            Outliers       OPS            Rounds  Iterations
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_appenzeller_herzog_rust         8.3062 (1.0)       10.4597 (1.0)        9.5076 (1.0)      0.2526 (1.0)        9.4838 (1.0)      0.2071 (1.0)          17;6  105.1790 (1.0)          93           1
-test_appenzeller_herzog_python      40.4444 (4.87)      52.6294 (5.03)      46.6228 (4.90)     2.4455 (9.68)      46.3344 (4.89)     1.3306 (6.43)          3;3   21.4487 (0.20)         21           1
-test_kwok_rust                     200.5890 (24.15)    206.5418 (19.75)    202.7931 (21.33)    1.7515 (6.93)     202.3053 (21.33)    1.7604 (8.50)          3;1    4.9311 (0.05)         10           1
-test_kwok_python                   771.9840 (92.94)    796.4751 (76.15)    785.5721 (82.63)    7.9376 (31.43)    787.8828 (83.08)    9.1918 (44.39)         3;0    1.2730 (0.01)         10           1
+test_appenzeller_herzog_rust         9.0677 (1.0)        9.7864 (1.0)        9.4185 (1.0)      0.1358 (1.0)        9.3926 (1.0)      0.1806 (1.0)          29;2  106.1736 (1.0)          91           1
+test_appenzeller_herzog_python      39.9461 (4.41)      52.0653 (5.32)      45.9939 (4.88)     2.3804 (17.53)     45.5451 (4.85)     0.6319 (3.50)          3;4   21.7420 (0.20)         21           1
+test_brouwer_rust                  202.3939 (22.32)    205.7248 (21.02)    203.9934 (21.66)    1.0837 (7.98)     204.0798 (21.73)    1.8093 (10.02)         5;0    4.9021 (0.05)         10           1
+test_brouwer_python                773.0455 (85.25)    800.8266 (81.83)    790.5267 (83.93)    8.7550 (64.47)    792.8620 (84.41)    7.4553 (41.29)         3;2    1.2650 (0.01)         10           1
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Legend:
   Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
-============================== 4 passed in 14.88s ==============================
+============================== 4 passed in 14.93s ==============================
