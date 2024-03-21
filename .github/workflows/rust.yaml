@@ -22,8 +22,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - name: Install synergy-datasets datatools
-      run: pip install synergy-dataset asreview-datatools
+    - name: Install Python dependencies
+      run: |
+        pip install synergy-dataset asreview-datatools pytest pytest-benchmark
     - name: Run synergy get
       run: synergy get -d Appenzeller-Herzog_2019 -l -o benches/files
     - name: Convert data
@@ -36,3 +37,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
+    - name: Run Rust benchmarks
+      run: cargo bench
+    - name: Run Python benchmarks
+      run: pytest --benchmark-min-rounds=10 benches/python_bench.py
