@@ -18,6 +18,16 @@ jobs:
       with:
         toolchain: stable
         override: true
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install synergy-datasets datatools
+      run: pip install synergy-datasets asreview-datatools
+    - name: Run synergy get
+      run: synergy get -d Appenzeller-Herzog_2019 -l -o benches/files
+    - name: Convert data
+      run: asreview data convert ./benches/files/Appenzeller-Herzog_2019.csv ./benches/files/Appenzeller-Herzog_2019.ris
     - name: Check
       uses: actions-rs/cargo@v1
       with:
