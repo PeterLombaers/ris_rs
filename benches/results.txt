@@ -1,0 +1,55 @@
+
+running 14 tests
+test content_iter::tests::test_next ... ignored
+test content_iter::tests::test_take_line ... ignored
+test content_iter::tests::test_take_tag ... ignored
+test parser::tests::test_eof ... ignored
+test parser::tests::test_multiple_references ... ignored
+test parser::tests::test_parse_reference ... ignored
+test ref_iter::tests::test_after_end_tag ... ignored
+test ref_iter::tests::test_before_start_tag ... ignored
+test ref_iter::tests::test_bom ... ignored
+test ref_iter::tests::test_double_byte_char ... ignored
+test ref_iter::tests::test_empty_ref ... ignored
+test ref_iter::tests::test_next ... ignored
+test ref_iter::tests::test_take_line ... ignored
+test ref_iter::tests::test_take_tag ... ignored
+
+test result: ok. 0 passed; 0 failed; 14 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+appenzeller_herzog_handwritten
+                        time:   [8.7589 ms 8.7772 ms 8.7947 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) low severe
+  1 (1.00%) high severe
+
+parse_reference         time:   [14.377 µs 14.450 µs 14.529 µs]
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) low severe
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+
+============================= test session starts ==============================
+platform linux -- Python 3.11.8, pytest-8.1.1, pluggy-1.4.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=10 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/runner/work/ris_rs/ris_rs
+configfile: pyproject.toml
+plugins: benchmark-4.0.0
+collected 4 items
+
+benches/python_bench.py ....                                             [100%]
+
+
+------------------------------------------------------------------------------------------ benchmark: 4 tests -----------------------------------------------------------------------------------------
+Name (time in ms)                       Min                 Max                Mean            StdDev              Median               IQR            Outliers       OPS            Rounds  Iterations
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_appenzeller_herzog_rust         9.0677 (1.0)        9.7864 (1.0)        9.4185 (1.0)      0.1358 (1.0)        9.3926 (1.0)      0.1806 (1.0)          29;2  106.1736 (1.0)          91           1
+test_appenzeller_herzog_python      39.9461 (4.41)      52.0653 (5.32)      45.9939 (4.88)     2.3804 (17.53)     45.5451 (4.85)     0.6319 (3.50)          3;4   21.7420 (0.20)         21           1
+test_brouwer_rust                  202.3939 (22.32)    205.7248 (21.02)    203.9934 (21.66)    1.0837 (7.98)     204.0798 (21.73)    1.8093 (10.02)         5;0    4.9021 (0.05)         10           1
+test_brouwer_python                773.0455 (85.25)    800.8266 (81.83)    790.5267 (83.93)    8.7550 (64.47)    792.8620 (84.41)    7.4553 (41.29)         3;2    1.2650 (0.01)         10           1
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+============================== 4 passed in 14.93s ==============================
