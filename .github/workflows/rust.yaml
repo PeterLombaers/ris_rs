@@ -51,6 +51,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
+    - name: Prepare benchmark results file with system info
+      run: |
+        echo "============================= Test Session Info ==============================" >> benches/results.txt
+        echo "System Information:" >> benches/results.txt
+        echo "Number of Cores: $(nproc)" >> benches/results.txt
+        echo "============================== Rust Benchmarks ===============================" >> benches/results.txt
+
     - name: Run Rust benchmarks and write results
       run: |
         cargo bench | tee benches/results.txt
