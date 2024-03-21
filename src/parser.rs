@@ -29,7 +29,7 @@ impl<const N: usize> RisParser<'_, N> {
     fn parse_reference<'a>(&self, input: &'a [u8]) -> PResult<HashMap<&'a str, &'a str>> {
         let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
 
-        for res in ContentIterator::new(self.allowed_tags.clone(), input) {
+        for res in ContentIterator::new(&self.allowed_tags, input) {
             let (tag, content) = res?;
             if tag != self.end_tag {
                 reference.insert(parse_utf8(tag)?, parse_utf8(content)?);
@@ -80,7 +80,11 @@ mod tests {
 AA  - val1
 AB  - val2
 ER  - ";
-        let output = HashMap::from([("TY  - ", "ref_type"), ("AA  - ", "val1"), ("AB  - ", "val2")]);
+        let output = HashMap::from([
+            ("TY  - ", "ref_type"),
+            ("AA  - ", "val1"),
+            ("AB  - ", "val2"),
+        ]);
         assert_eq!(parser.parse_reference(input).unwrap(), output);
     }
 

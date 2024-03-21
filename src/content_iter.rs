@@ -14,13 +14,13 @@ enum TakeTagResult<'a> {
 /// Move the cursor to after the next newline character.
 #[derive(Debug, Clone)]
 pub struct ContentIterator<'a, 'b, const N: usize> {
-    allowed_tags: HashSet<&'a [u8; N]>,
+    allowed_tags: &'a HashSet<&'a [u8; N]>,
     text: &'b [u8],
     cursor: usize,
 }
 
 impl<'a, 'b, const N: usize> ContentIterator<'a, 'b, N> {
-    pub fn new(allowed_tags: HashSet<&'a [u8; N]>, text: &'b [u8]) -> Self {
+    pub fn new(allowed_tags: &'a HashSet<&'a [u8; N]>, text: &'b [u8]) -> Self {
         ContentIterator {
             allowed_tags,
             text,
@@ -100,7 +100,8 @@ mod tests {
 
     #[test]
     fn test_take_line() {
-        let mut content_iter = ContentIterator::new(HashSet::from([b""]), b"foo\n\nbar");
+        let allowed_tags = HashSet::from([b""]);
+        let mut content_iter = ContentIterator::new(&allowed_tags, b"foo\n\nbar");
         assert!(content_iter.take_line().is_some());
         assert_eq!(content_iter.cursor, 4);
         assert!(content_iter.take_line().is_some());
@@ -112,15 +113,15 @@ mod tests {
     #[test]
     fn test_take_tag() {
         assert_eq!(
-            ContentIterator::new(HashSet::from([b"TY  - "]), b"TY  - foo bar").take_tag(),
+            ContentIterator::new(&HashSet::from([b"TY  - "]), b"TY  - foo bar").take_tag(),
             TakeTagResult::Present(b"TY  - ")
         );
         assert_eq!(
-            ContentIterator::new(HashSet::from([b"TY  - "]), b"QQ  - foo bar").take_tag(),
+            ContentIterator::new(&HashSet::from([b"TY  - "]), b"QQ  - foo bar").take_tag(),
             TakeTagResult::NotPresent
         );
         assert_eq!(
-            ContentIterator::new(HashSet::from([b"TY  - "]), b"TY").take_tag(),
+            ContentIterator::new(&HashSet::from([b"TY  - "]), b"TY").take_tag(),
             TakeTagResult::EOF
         );
     }
@@ -132,8 +133,9 @@ ID  - 12345
 A2  - Glattauer, Daniel
 UR  - http://example_url.com
 ER  - ";
+        let allowed_tags = HashSet::from([b"TY  - ", b"A2  - ", b"ID  - ", b"UR  - ", b"ER  - "]);
         let mut content_iter = ContentIterator::new(
-            HashSet::from([b"TY  - ", b"A2  - ", b"ID  - ", b"UR  - ", b"ER  - "]),
+            &allowed_tags,
             ref_bytes,
         );
         assert_eq!(
