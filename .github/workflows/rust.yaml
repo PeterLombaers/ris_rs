@@ -24,10 +24,9 @@ jobs:
         python-version: '3.11'
     - name: Create Python virtual environment
       run: python -m venv .venv
-    - name: Activate Python virtual environment
-      run: source .venv/bin/activate
     - name: Install Python dependencies
       run: |
+        source .venv/bin/activate
         python -m pip install --upgrade pip
         pip install synergy-dataset asreview-datatools pytest pytest-benchmark maturin
     - name: Package and Install with Maturin
@@ -42,6 +41,7 @@ jobs:
       run: |
         source .venv/bin/activate
         asreview data convert ./benches/files/Appenzeller-Herzog_2019.csv ./benches/files/Appenzeller-Herzog_2019.ris
+        ls -l ./benches/files
     - name: Check
       uses: actions-rs/cargo@v1
       with:
