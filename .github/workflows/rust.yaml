@@ -53,7 +53,7 @@ jobs:
         command: test
     - name: Prepare benchmark results file with system info
       run: |
-        echo "============================= Test Session Info ==============================" | tee -a benches/results.txt
+        echo "============================= Test Session Info ==============================" | tee benches/results.txt
         echo "System Information:" | tee -a benches/results.txt
         echo "Number of Cores: $(nproc)" | tee -a benches/results.txt
         echo "============================== Rust Benchmarks ===============================" | tee -a benches/results.txt
