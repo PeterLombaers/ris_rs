@@ -56,9 +56,13 @@ jobs:
         echo "============================= Test Session Info ==============================" | tee benches/results.txt
         echo "System Information:" | tee -a benches/results.txt
         echo "Number of Cores: $(nproc)" | tee -a benches/results.txt
-        echo "============================== Rust Benchmarks ===============================" | tee -a benches/results.txt
+        echo "CPU Model: $(lscpu | grep "Model name" | cut -d ':' -f 2 | xargs)" | tee -a benches/results.txt
+        echo "Memory Information:" | tee -a benches/results.txt
+        free -h | tee -a benches/results.txt
+        echo ""
     - name: Run Rust benchmarks and write results
       run: |
+        echo "============================== Rust Benchmarks ===============================" | tee -a benches/results.txt
         cargo bench | tee -a benches/results.txt
     - name: Run Python benchmarks and append results
       run: |
