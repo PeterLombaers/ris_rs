@@ -50,9 +50,18 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-    - name: Run Rust benchmarks
-      run: cargo bench
-    - name: Run Python benchmarks
+    - name: Run Rust benchmarks and write results
+      run: |
+        cargo bench | tee benches/results.md
+    - name: Run Python benchmarks and append results
       run: |
         source .venv/bin/activate
-        pytest --benchmark-min-rounds=10 benches/python_bench.py
+        pip freeze
+        pytest --benchmark-min-rounds=10 benches/python_bench.py | tee -a benches/results.md
+    - name: Commit results to repository
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add benches/results.md
+        git commit -m "Update benchmark results"
+        git push
