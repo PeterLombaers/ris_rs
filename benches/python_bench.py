@@ -16,7 +16,7 @@ def test_appenzeller_herzog_python(benchmark):
     benchmark(load_file_rispy, "benches/files/Appenzeller-Herzog_2019.ris")
 
 
-def test_kwok_python(benchmark):
+def test_brouwer_python(benchmark):
     benchmark(load_file_rispy, "benches/files/Brouwer_2019.ris")
 
 
@@ -24,7 +24,7 @@ def test_appenzeller_herzog_rust(benchmark):
     benchmark(load_file_rust, "benches/files/Appenzeller-Herzog_2019.ris")
 
 
-def test_kwok_rust(benchmark):
+def test_brouwer_rust(benchmark):
     benchmark(load_file_rust, "benches/files/Brouwer_2019.ris")
 
 
