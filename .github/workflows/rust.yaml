@@ -37,10 +37,12 @@ jobs:
       run: |
         source .venv/bin/activate
         synergy get -d Appenzeller-Herzog_2019 -l -o benches/files
+        synergy get -d Kwok_2020 -l -o benches/files
     - name: Convert data
       run: |
         source .venv/bin/activate
         asreview data convert ./benches/files/Appenzeller-Herzog_2019.csv ./benches/files/Appenzeller-Herzog_2019.ris
+        asreview data convert ./benches/files/Kwok_2020.csv ./benches/files/Kwok_2020.ris
         ls -l ./benches/files
     - name: Check
       uses: actions-rs/cargo@v1
@@ -52,16 +54,16 @@ jobs:
         command: test
     - name: Run Rust benchmarks and write results
       run: |
-        cargo bench | tee benches/results.md
+        cargo bench | tee benches/results.txt
     - name: Run Python benchmarks and append results
       run: |
         source .venv/bin/activate
         pip freeze
-        pytest --benchmark-min-rounds=10 benches/python_bench.py | tee -a benches/results.md
+        pytest --benchmark-min-rounds=10 benches/python_bench.py | tee -a benches/results.txt
     - name: Commit results to repository
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add benches/results.md
+        git add benches/results.txt
         git commit -m "Update benchmark results"
         git push
