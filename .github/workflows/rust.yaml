@@ -36,8 +36,7 @@ jobs:
     - name: Run synergy get
       run: |
         source .venv/bin/activate
-        synergy get -d Appenzeller-Herzog_2019 -l -o benches/files
-        synergy get -d Brouwer_2019 -l -o benches/files
+        synergy get -d Appenzeller-Herzog_2019 Brouwer_2019 -l -o benches/files
     - name: Convert data
       run: |
         source .venv/bin/activate
