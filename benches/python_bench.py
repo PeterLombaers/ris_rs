@@ -17,7 +17,7 @@ def test_appenzeller_herzog_python(benchmark):
 
 
 def test_kwok_python(benchmark):
-    benchmark(load_file_rispy, "benches/files/Kwok_2020.ris")
+    benchmark(load_file_rispy, "benches/files/Brouwer_2019.ris")
 
 
 def test_appenzeller_herzog_rust(benchmark):
@@ -25,12 +25,12 @@ def test_appenzeller_herzog_rust(benchmark):
 
 
 def test_kwok_rust(benchmark):
-    benchmark(load_file_rust, "benches/files/Kwok_2020.ris")
+    benchmark(load_file_rust, "benches/files/Brouwer_2019.ris")
 
 
 # def test_appenzeller_herzog_100_000_python(benchmark):
 #     benchmark(load_file_rispy, "benches/files/AH_100_000.ris")
 
 
-def test_appenzeller_herzog_100_000_rust(benchmark):
-    benchmark(load_file_rust, "benches/files/AH_100_000.ris")
+# def test_appenzeller_herzog_100_000_rust(benchmark):
+#     benchmark(load_file_rust, "benches/files/AH_100_000.ris")

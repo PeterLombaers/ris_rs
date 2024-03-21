@@ -37,12 +37,12 @@ jobs:
       run: |
         source .venv/bin/activate
         synergy get -d Appenzeller-Herzog_2019 -l -o benches/files
-        synergy get -d Kwok_2020 -l -o benches/files
+        synergy get -d Brouwer_2019 -l -o benches/files
     - name: Convert data
       run: |
         source .venv/bin/activate
         asreview data convert ./benches/files/Appenzeller-Herzog_2019.csv ./benches/files/Appenzeller-Herzog_2019.ris
-        asreview data convert ./benches/files/Kwok_2020.csv ./benches/files/Kwok_2020.ris
+        asreview data convert ./benches/files/Brouwer_2019.csv ./benches/files/Brouwer_2019.ris
         ls -l ./benches/files
     - name: Check
       uses: actions-rs/cargo@v1
