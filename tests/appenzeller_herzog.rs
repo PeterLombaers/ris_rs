@@ -8,11 +8,9 @@ fn parse_handwritten() {
     let csv_file_path = "benches/files/Appenzeller-Herzog_2019.csv";
     let ris_file_path = "benches/files/Appenzeller-Herzog_2019.ris";
 
-    // Open the file in read-only mode (ignoring errors).
     let file = File::open(csv_file_path).unwrap();
     let reader = io::BufReader::new(file);
 
-    // Count the number of lines, subtract 1 for the title column.
     let num_lines = reader.lines().count() - 1;
 
     let contents = fs::read(ris_file_path).unwrap();
