@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
         override: true
@@ -59,7 +59,7 @@ jobs:
         echo "CPU Model: $(lscpu | grep "Model name" | cut -d ':' -f 2 | xargs)" | tee -a benches/results.txt
         echo "Memory Information:" | tee -a benches/results.txt
         free -h | tee -a benches/results.txt
-        echo ""
+        echo " "
     - name: Run Rust benchmarks and write results
       run: |
         echo "============================== Rust Benchmarks ===============================" | tee -a benches/results.txt
