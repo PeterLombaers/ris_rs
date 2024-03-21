@@ -1,14 +1,11 @@
 use crate::content_iter::ContentIterator;
 use crate::Error;
 use crate::ReferenceIterator;
+use crate::handler::Handler;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
 type PResult<T> = Result<T, Error>;
-
-fn parse_utf8(a: &[u8]) -> PResult<&str> {
-    std::str::from_utf8(a).map_err(|_| Error::ParserError(format!("invalid utf-8 in tag {:?}", a)))
-}
 
 #[derive(Debug, Clone)]
 pub struct RisParser<'a, const N: usize> {
@@ -27,16 +24,13 @@ impl<const N: usize> RisParser<'_, N> {
     }
 
     fn parse_reference<'a>(&self, input: &'a [u8]) -> PResult<HashMap<&'a str, &'a str>> {
-        let mut reference: HashMap<&str, &str> = HashMap::with_capacity(20);
+        let mut handler = Handler::new(self.start_tag, self.end_tag, self.allowed_tags.clone());
 
         for res in ContentIterator::new(&self.allowed_tags, input) {
             let (tag, content) = res?;
-            if tag != self.end_tag {
-                reference.insert(parse_utf8(tag)?, parse_utf8(content)?);
-            }
+            handler.handle(tag, content)?;
         }
-        reference.shrink_to_fit();
-        Ok(reference)
+        Ok(handler.finish())
     }
 }
 

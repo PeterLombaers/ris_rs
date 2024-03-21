@@ -1,5 +1,6 @@
 mod content_iter;
 mod error;
+mod handler;
 mod parser;
 mod python_bindings;
 mod ref_iter;
