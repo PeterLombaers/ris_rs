@@ -1,7 +1,7 @@
 use crate::content_iter::ContentIterator;
+use crate::hashmap_handler::HashMapHandler;
 use crate::Error;
 use crate::ReferenceIterator;
-use crate::handler::Handler;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
@@ -14,6 +14,16 @@ pub struct RisParser<'a, const N: usize> {
     allowed_tags: HashSet<&'a [u8; N]>,
 }
 
+impl<'a, const N: usize> RisParser<'a, N> {
+    pub fn new(handler: HashMapHandler<'a, '_, N>) -> Self {
+        return Self {
+            start_tag: handler.start_tag(),
+            end_tag: handler.end_tag(),
+            allowed_tags: handler.allowed_tags().clone(),
+        };
+    }
+}
+
 impl<const N: usize> RisParser<'_, N> {
     pub fn parse<'a>(&self, input: &'a [u8]) -> PResult<Vec<HashMap<&'a str, &'a str>>> {
         ReferenceIterator::new(self.start_tag, self.end_tag, &input)
@@ -24,7 +34,7 @@ impl<const N: usize> RisParser<'_, N> {
     }
 
     fn parse_reference<'a>(&self, input: &'a [u8]) -> PResult<HashMap<&'a str, &'a str>> {
-        let mut handler = Handler::new(self.start_tag, self.end_tag, self.allowed_tags.clone());
+        let mut handler = HashMapHandler::new(self.start_tag, self.end_tag, &self.allowed_tags);
 
         for res in ContentIterator::new(&self.allowed_tags, input) {
             let (tag, content) = res?;
