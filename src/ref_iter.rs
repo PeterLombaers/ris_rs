@@ -1,8 +1,7 @@
 use std::iter::Enumerate;
 
 use crate::Error;
-
-type PResult<T> = Result<T, Error>;
+use crate::PResult;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TakeTagResult {

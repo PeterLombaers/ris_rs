@@ -1,11 +1,9 @@
 use crate::content_iter::ContentIterator;
 use crate::hashmap_handler::HashMapHandler;
-use crate::Error;
+use crate::PResult;
 use crate::ReferenceIterator;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
-
-type PResult<T> = Result<T, Error>;
 
 #[derive(Debug, Clone)]
 pub struct RisParser<'a, const N: usize> {
