@@ -25,7 +25,7 @@ impl<'a, const N: usize> RisParser<'a, N> {
 }
 
 impl<const N: usize> RisParser<'_, N> {
-    pub fn parse<'a>(&self, input: &'a [u8]) -> PResult<Vec<HashMap<&'a str, &'a str>>> {
+    pub fn parse<'b>(&self, input: &'b [u8]) -> PResult<Vec<HashMap<&'b str, &'b str>>> {
         ReferenceIterator::new(self.start_tag, self.end_tag, &input)
             .into_iter()
             .par_bridge()
@@ -33,7 +33,7 @@ impl<const N: usize> RisParser<'_, N> {
             .collect()
     }
 
-    fn parse_reference<'a>(&self, input: &'a [u8]) -> PResult<HashMap<&'a str, &'a str>> {
+    fn parse_reference<'b>(&self, input: &'b [u8]) -> PResult<HashMap<&'b str, &'b str>> {
         let mut handler = HashMapHandler::new(self.start_tag, self.end_tag, &self.allowed_tags);
 
         for res in ContentIterator::new(&self.allowed_tags, input) {
