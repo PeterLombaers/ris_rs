@@ -4,14 +4,15 @@ Number of Cores: 4
 CPU Model: AMD EPYC 7763 64-Core Processor
 Memory Information:
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       676Mi        11Gi        23Mi       3.4Gi        14Gi
+Mem:            15Gi       770Mi        11Gi        23Mi       3.7Gi        14Gi
 Swap:          4.0Gi          0B       4.0Gi
 ============================== Rust Benchmarks ===============================
 
-running 14 tests
+running 15 tests
 test content_iter::tests::test_next ... ignored
 test content_iter::tests::test_take_line ... ignored
 test content_iter::tests::test_take_tag ... ignored
+test list_handler::tests::test_list_handler ... ignored
 test parser::tests::test_eof ... ignored
 test parser::tests::test_multiple_references ... ignored
 test parser::tests::test_parse_reference ... ignored
@@ -24,21 +25,22 @@ test ref_iter::tests::test_next ... ignored
 test ref_iter::tests::test_take_line ... ignored
 test ref_iter::tests::test_take_tag ... ignored
 
-test result: ok. 0 passed; 0 failed; 14 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 15 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 appenzeller_herzog_handwritten
-                        time:   [8.8811 ms 8.8922 ms 8.9047 ms]
-Found 5 outliers among 100 measurements (5.00%)
-  3 (3.00%) high mild
-  2 (2.00%) high severe
+                        time:   [7.5386 ms 7.5512 ms 7.5640 ms]
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) low mild
+  1 (1.00%) high mild
 
-parse_reference         time:   [18.692 µs 18.792 µs 18.874 µs]
-Found 6 outliers among 100 measurements (6.00%)
-  3 (3.00%) low severe
+parse_reference         time:   [14.793 µs 14.886 µs 14.999 µs]
+Found 11 outliers among 100 measurements (11.00%)
   3 (3.00%) low mild
+  4 (4.00%) high mild
+  4 (4.00%) high severe
 
 ============================= test session starts ==============================
-platform linux -- Python 3.11.8, pytest-8.1.1, pluggy-1.4.0
+platform linux -- Python 3.11.9, pytest-8.1.1, pluggy-1.4.0
 benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=10 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
 rootdir: /home/runner/work/ris_rs/ris_rs
 configfile: pyproject.toml
@@ -48,16 +50,16 @@ collected 4 items
 benches/python_bench.py ....                                             [100%]
 
 
------------------------------------------------------------------------------------------- benchmark: 4 tests -----------------------------------------------------------------------------------------
-Name (time in ms)                       Min                 Max                Mean             StdDev              Median               IQR            Outliers      OPS            Rounds  Iterations
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_appenzeller_herzog_rust        11.6551 (1.0)       12.4506 (1.0)       11.9695 (1.0)       0.1810 (1.0)       11.9548 (1.0)      0.2256 (1.0)          24;2  83.5456 (1.0)          75           1
-test_appenzeller_herzog_python      42.1449 (3.62)      56.5572 (4.54)      48.5195 (4.05)      2.8123 (15.53)     48.2125 (4.03)     0.9383 (4.16)          3;3  20.6103 (0.25)         21           1
-test_brouwer_rust                  233.5291 (20.04)    244.2163 (19.61)    240.4509 (20.09)     3.2578 (17.99)    240.8215 (20.14)    1.8962 (8.40)          4;2   4.1589 (0.05)         10           1
-test_brouwer_python                797.2857 (68.41)    868.3606 (69.74)    814.3422 (68.03)    20.1181 (111.12)   811.7107 (67.90)    8.0741 (35.79)         1;1   1.2280 (0.01)         10           1
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------- benchmark: 4 tests ------------------------------------------------------------------------------------------
+Name (time in ms)                       Min                 Max                Mean             StdDev              Median                IQR            Outliers       OPS            Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_appenzeller_herzog_rust         9.4186 (1.0)       10.3782 (1.0)        9.7275 (1.0)       0.1588 (1.0)        9.6978 (1.0)       0.1438 (1.0)          19;6  102.8013 (1.0)          88           1
+test_appenzeller_herzog_python      36.4817 (3.87)      50.6094 (4.88)      43.1487 (4.44)      3.1157 (19.62)     43.0056 (4.43)      2.5171 (17.50)         4;4   23.1756 (0.23)         22           1
+test_brouwer_rust                  202.9407 (21.55)    208.3877 (20.08)    205.7870 (21.16)     1.5967 (10.05)    205.9276 (21.23)     2.0902 (14.53)         3;0    4.8594 (0.05)         10           1
+test_brouwer_python                734.1787 (77.95)    764.7966 (73.69)    750.8994 (77.19)    10.9143 (68.73)    751.9631 (77.54)    16.1668 (112.41)        4;0    1.3317 (0.01)         10           1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Legend:
   Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
-============================== 4 passed in 15.73s ==============================
+============================== 4 passed in 14.47s ==============================
