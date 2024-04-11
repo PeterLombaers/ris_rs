@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::Error;
-use crate::PResult;
 use crate::utils::parse_utf8;
+use crate::Error;
+use crate::Handler;
+use crate::PResult;
 
 #[derive(Debug, Clone)]
 pub struct HashMapHandler<'a, 'b, T, const N: usize> {
@@ -25,8 +26,12 @@ impl<'a, 'b, T, const N: usize> HashMapHandler<'a, 'b, T, N> {
             state: HashMap::with_capacity(20),
         }
     }
+}
 
-    pub fn handle(&mut self, tag: &'b [u8], content: T) -> PResult<()> {
+impl<'a, 'b, T, const N: usize> Handler<'a, 'b, T, HashMap<&'b str, T>, N>
+    for HashMapHandler<'a, 'b, T, N>
+{
+    fn handle(&mut self, tag: &'b [u8], content: T) -> PResult<()> {
         if tag.len() != N {
             return Err(Error::UnknownTag(format!("tag should have length {}", N)));
         }
@@ -40,20 +45,20 @@ impl<'a, 'b, T, const N: usize> HashMapHandler<'a, 'b, T, N> {
         Ok(())
     }
 
-    pub fn finish(mut self) -> HashMap<&'b str, T> {
+    fn finish(mut self) -> HashMap<&'b str, T> {
         self.state.shrink_to_fit();
         self.state
     }
 
-    pub fn start_tag(&self) -> &'a [u8; N] {
+    fn start_tag(&self) -> &'a [u8; N] {
         self.start_tag
     }
 
-    pub fn end_tag(&self) -> &'a [u8; N] {
+    fn end_tag(&self) -> &'a [u8; N] {
         self.end_tag
     }
 
-    pub fn allowed_tags(&self) -> &'a HashSet<&'a [u8; N]> {
+    fn allowed_tags(&self) -> &'a HashSet<&'a [u8; N]> {
         self.allowed_tags
     }
 }

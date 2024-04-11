@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::hashmap_handler::HashMapHandler;
-use crate::Error;
-use crate::PResult;
 use crate::utils::parse_utf8;
+use crate::Error;
+use crate::Handler;
+use crate::PResult;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ListOrItem<T> {
@@ -27,20 +28,24 @@ impl<'a, 'b, T, const N: usize> ListHandler<'a, 'b, T, N> {
             lists: HashMap::with_capacity(list_tags.len()),
         }
     }
+}
 
-    pub fn start_tag(&self) -> &'a [u8; N] {
+impl<'a, 'b, T, const N: usize> Handler<'a, 'b, T, HashMap<&'b str, ListOrItem<T>>, N>
+    for ListHandler<'a, 'b, T, N>
+{
+    fn start_tag(&self) -> &'a [u8; N] {
         self.handler.start_tag()
     }
 
-    pub fn end_tag(&self) -> &'a [u8; N] {
+    fn end_tag(&self) -> &'a [u8; N] {
         self.handler.end_tag()
     }
 
-    pub fn allowed_tags(&self) -> &'a HashSet<&'a [u8; N]> {
+    fn allowed_tags(&self) -> &'a HashSet<&'a [u8; N]> {
         self.handler.allowed_tags()
     }
 
-    pub fn handle(&mut self, tag: &'b [u8], content: T) -> PResult<()> {
+    fn handle(&mut self, tag: &'b [u8], content: T) -> PResult<()> {
         if tag.len() != N {
             return Err(Error::UnknownTag(format!("tag should have length {}", N)));
         }
@@ -61,7 +66,7 @@ impl<'a, 'b, T, const N: usize> ListHandler<'a, 'b, T, N> {
         }
     }
 
-    pub fn finish(self) -> HashMap<&'b str, ListOrItem<T>> {
+    fn finish(self) -> HashMap<&'b str, ListOrItem<T>> {
         self.handler
             .finish()
             .into_iter()

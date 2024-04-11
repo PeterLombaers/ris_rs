@@ -1,5 +1,6 @@
 use crate::content_iter::ContentIterator;
 use crate::hashmap_handler::HashMapHandler;
+use crate::Handler;
 use crate::PResult;
 use crate::ReferenceIterator;
 use crate::utils::parse_utf8;
