@@ -1,6 +1,7 @@
 mod content_iter;
 mod error;
 mod hashmap_handler;
+mod list_handler;
 mod parser;
 mod python_bindings;
 mod ref_iter;
