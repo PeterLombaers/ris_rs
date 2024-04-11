@@ -4,10 +4,7 @@ use std::collections::HashSet;
 use crate::hashmap_handler::HashMapHandler;
 use crate::Error;
 use crate::PResult;
-
-fn parse_utf8(a: &[u8]) -> PResult<&str> {
-    std::str::from_utf8(a).map_err(|_| Error::ParserError(format!("invalid utf-8 in tag {:?}", a)))
-}
+use crate::utils::parse_utf8;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ListOrItem<T> {
@@ -16,14 +13,14 @@ pub enum ListOrItem<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct ListHandler<'a, 'b, const N: usize> {
-    handler: HashMapHandler<'a, 'b, N>,
+pub struct ListHandler<'a, 'b, T, const N: usize> {
+    handler: HashMapHandler<'a, 'b, T, N>,
     list_tags: &'a HashSet<&'a [u8; N]>,
-    lists: HashMap<&'b str, Vec<&'b str>>,
+    lists: HashMap<&'b str, Vec<T>>,
 }
 
-impl<'a, 'b, const N: usize> ListHandler<'a, 'b, N> {
-    pub fn new(handler: HashMapHandler<'a, 'b, N>, list_tags: &'a HashSet<&'a [u8; N]>) -> Self {
+impl<'a, 'b, T, const N: usize> ListHandler<'a, 'b, T, N> {
+    pub fn new(handler: HashMapHandler<'a, 'b, T, N>, list_tags: &'a HashSet<&'a [u8; N]>) -> Self {
         Self {
             handler,
             list_tags,
@@ -43,7 +40,7 @@ impl<'a, 'b, const N: usize> ListHandler<'a, 'b, N> {
         self.handler.allowed_tags()
     }
 
-    pub fn handle(&mut self, tag: &'b [u8], content: &'b [u8]) -> PResult<()> {
+    pub fn handle(&mut self, tag: &'b [u8], content: T) -> PResult<()> {
         if tag.len() != N {
             return Err(Error::UnknownTag(format!("tag should have length {}", N)));
         }
@@ -52,10 +49,10 @@ impl<'a, 'b, const N: usize> ListHandler<'a, 'b, N> {
             let utf_tag = parse_utf8(tag)?;
             match self.lists.get_mut(utf_tag) {
                 Some(vec) => {
-                    vec.push(parse_utf8(content)?);
+                    vec.push(content);
                 }
                 None => {
-                    self.lists.insert(&utf_tag, vec![parse_utf8(content)?]);
+                    self.lists.insert(&utf_tag, vec![content]);
                 }
             }
             Ok(())
@@ -64,11 +61,11 @@ impl<'a, 'b, const N: usize> ListHandler<'a, 'b, N> {
         }
     }
 
-    pub fn finish(self) -> HashMap<&'b str, ListOrItem<&'b str>> {
+    pub fn finish(self) -> HashMap<&'b str, ListOrItem<T>> {
         self.handler
             .finish()
-            .iter()
-            .map(|(&k, &v)| (k, ListOrItem::Item(v)))
+            .into_iter()
+            .map(|(k, v)| (k, ListOrItem::Item(v)))
             .chain(
                 self.lists
                     .into_iter()
@@ -80,8 +77,6 @@ impl<'a, 'b, const N: usize> ListHandler<'a, 'b, N> {
 
 #[cfg(test)]
 mod tests {
-    use crate::handler;
-
     use super::*;
 
     #[test]
@@ -91,12 +86,12 @@ mod tests {
         let list_tags = HashSet::from([b"FOO"]);
         let mut handler = ListHandler::new(base_handler, &list_tags);
 
-        handler.handle(b"STA", b"0").unwrap();
-        handler.handle(b"FOO", b"1").unwrap();
-        handler.handle(b"BAR", b"2").unwrap();
-        handler.handle(b"FOO", b"3").unwrap();
-        handler.handle(b"BAR", b"4").unwrap();
-        handler.handle(b"END", b"This is ignored").unwrap();
+        handler.handle(b"STA", "0").unwrap();
+        handler.handle(b"FOO", "1").unwrap();
+        handler.handle(b"BAR", "2").unwrap();
+        handler.handle(b"FOO", "3").unwrap();
+        handler.handle(b"BAR", "4").unwrap();
+        handler.handle(b"END", "This is ignored").unwrap();
 
         assert_eq!(
             handler.finish(),

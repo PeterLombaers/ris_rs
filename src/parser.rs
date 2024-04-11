@@ -2,6 +2,7 @@ use crate::content_iter::ContentIterator;
 use crate::hashmap_handler::HashMapHandler;
 use crate::PResult;
 use crate::ReferenceIterator;
+use crate::utils::parse_utf8;
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 
@@ -13,7 +14,7 @@ pub struct RisParser<'a, const N: usize> {
 }
 
 impl<'a, const N: usize> RisParser<'a, N> {
-    pub fn new(handler: HashMapHandler<'a, '_, N>) -> Self {
+    pub fn new(handler: HashMapHandler<'a, '_,  &str, N>) -> Self {
         return Self {
             start_tag: handler.start_tag(),
             end_tag: handler.end_tag(),
@@ -22,7 +23,7 @@ impl<'a, const N: usize> RisParser<'a, N> {
     }
 }
 
-impl<const N: usize> RisParser<'_, N> {
+impl<'a, const N: usize> RisParser<'a, N> {
     pub fn parse<'b>(&self, input: &'b [u8]) -> PResult<Vec<HashMap<&'b str, &'b str>>> {
         ReferenceIterator::new(self.start_tag, self.end_tag, &input)
             .into_iter()
@@ -31,12 +32,12 @@ impl<const N: usize> RisParser<'_, N> {
             .collect()
     }
 
-    fn parse_reference<'b>(&self, input: &'b [u8]) -> PResult<HashMap<&'b str, &'b str>> {
-        let mut handler = HashMapHandler::new(self.start_tag, self.end_tag, &self.allowed_tags);
+    fn parse_reference<'b>(&'a self, input: &'b [u8]) -> PResult<HashMap<&'b str, &'b str>> {
+        let mut handler: HashMapHandler<'a, 'b, &'b str, N> = HashMapHandler::new(self.start_tag, self.end_tag, &self.allowed_tags);
 
         for res in ContentIterator::new(&self.allowed_tags, input) {
             let (tag, content) = res?;
-            handler.handle(tag, content)?;
+            handler.handle(tag, parse_utf8(content)?)?;
         }
         Ok(handler.finish())
     }
